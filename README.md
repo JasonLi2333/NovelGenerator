@@ -1,14 +1,43 @@
+# NovelGenerator 汉化版 🇨🇳
+
+<div align="center">
+
+> **本项目是 [KazKozDev/NovelGenerator](https://github.com/KazKozDev/NovelGenerator) 的中文汉化版本**
+> 
+> *Chinese localized version of NovelGenerator*
+
+</div>
+
+## 汉化内容
+
+- ✅ **界面完全汉化** - 所有 UI 组件和提示信息翻译为中文
+- ✅ **提示词系统汉化** - 所有 AI 生成提示词优化为中文语境
+- ✅ **中文写作优化** - 针对中文小说创作特点进行调整
+- ✅ **新增中文类型提示** - 添加适合中文小说的类型提示词系统
+- ✅ **本地化配置** - 优化中文环境下的使用体验
+
+## 与原版的区别
+
+| 特性 | 原版 | 汉化版 |
+|------|------|--------|
+| 界面语言 | 英文 | 中文 |
+| 生成内容 | 英文小说 | 中文小说 |
+| 提示词 | 英文提示 | 中文提示 |
+| 写作风格 | 西方文学风格 | 中文文学风格 |
+
+---
+
 <div align="center">
    <img src="https://github.com/user-attachments/assets/c3f3a380-7958-4186-94c1-7e1472ef22b1" alt="logo" width="120">
 </div>
 <div align="center">
    NovelGenerator v 4.1<br><br>
-   LLM-powered tool that expands brief concepts into full-length novels. <br><br>
-   From idea to manuscript. Without human intervention.
+   基于大语言模型的小说生成工具，将简短的创意扩展为完整的长篇小说<br><br>
+   从想法到完稿，无需人工干预
    
 </div>
 <br><br>
-NovelGenerator enables writers, storytellers, and LLM enthusiasts to produce complete fiction. The entire generation process runs autonomously while maintaining narrative coherence. Just provide your story premise and desired number of chapters. 
+NovelGenerator 让作家、故事创作者和 LLM 爱好者能够创作完整的小说作品。整个生成过程自主运行，同时保持叙事连贯性。只需提供故事前提和所需章节数即可。 
 
 <br>
 <br>
@@ -1247,6 +1276,57 @@ The pipeline generates multi-threaded narratives. It tracks multiple character p
 </details>   
    
 
+---
+
+## 🚀 快速开始（中文版）
+
+### 环境要求
+- Node.js 16+ （已在 22.18.0 上测试）
+- Google Gemini API 密钥 - 可在 [aistudio.google.com](https://aistudio.google.com) 免费获取
+- 浏览器 - Chrome、Safari 或 Firefox（用于导出 PDF）
+
+### 安装步骤
+
+1. **克隆仓库**
+```bash
+git clone https://github.com/JasonLi2333/NovelGenerator.git
+cd NovelGenerator
+```
+
+2. **安装依赖**
+```bash
+npm install
+```
+
+3. **配置 API 密钥**
+
+创建 `.env` 文件：
+```bash
+cp .env.example .env
+```
+
+编辑 `.env` 文件，填入你的 Gemini API 密钥：
+```
+API_KEY=你的_gemini_api_密钥
+```
+
+4. **启动应用**
+```bash
+npm run dev
+```
+
+访问 http://localhost:3000 开始创作你的小说！
+
+### 使用流程
+
+1. **输入故事设定** - 描述你的故事（最多 1200 字符）
+2. **选择类型** - 从 7 个类型中选择（奇幻、科幻、悬疑、爱情、恐怖、惊悚、历史）
+3. **设置章节数** - 最少 3 章，建议 10-15 章
+4. **审核大纲** - AI 生成详细的章节大纲，可编辑
+5. **生成小说** - 每章约 5-10 分钟，全自动生成
+6. **导出作品** - 支持 EPUB、PDF、Markdown 格式
+
+---
 
 ## Requirements
 
@@ -1506,8 +1586,26 @@ npm install
 
 ---
 
+## 关于汉化版
+
+本汉化版本由 [JasonLi2333](https://github.com/JasonLi2333) 维护，旨在为中文用户提供更好的小说创作体验。
+
+**汉化版仓库：** https://github.com/JasonLi2333/NovelGenerator
+
+**原项目仓库：** https://github.com/KazKozDev/NovelGenerator
+
+如果这个汉化版对你有帮助，欢迎给原项目和汉化版都点个星标 ⭐
+
+### 致谢
+
+感谢 [Artem KK](https://www.linkedin.com/in/kazkozdev/) 创建了这个优秀的开源项目！
+
+---
+
 If you like this project, please give it a star ⭐
 
 For questions, feedback, or support, reach out to:
 
-[Artem KK](https://www.linkedin.com/in/kazkozdev/) | MIT [LICENSE](LICENSE) 
+**原作者：** [Artem KK](https://www.linkedin.com/in/kazkozdev/) | MIT [LICENSE](LICENSE)
+
+**汉化版维护者：** [JasonLi2333](https://github.com/JasonLi2333) 
