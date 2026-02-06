@@ -12,7 +12,13 @@ export default defineConfig(({ mode }) => {
       plugins: [react()],
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
+        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+        'process.env.OPENAI_API_KEY': JSON.stringify(env.OPENAI_API_KEY),
+        'process.env.OPENAI_BASE_URL': JSON.stringify(env.OPENAI_BASE_URL),
+        'process.env.XAI_API_KEY': JSON.stringify(env.XAI_API_KEY),
+        'process.env.XAI_BASE_URL': JSON.stringify(env.XAI_BASE_URL),
+        'process.env.DEEPSEEK_API_KEY': JSON.stringify(env.DEEPSEEK_API_KEY),
+        'process.env.DEEPSEEK_BASE_URL': JSON.stringify(env.DEEPSEEK_BASE_URL),
       },
       resolve: {
         alias: {

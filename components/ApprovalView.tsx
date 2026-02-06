@@ -25,7 +25,7 @@ const ApprovalView: React.FC<ApprovalViewProps> = ({
       
       <div className="p-4 bg-slate-700 rounded-md shadow">
         <p className="text-sm text-slate-300 mb-4">
-          The AI has generated the following outline for your story. Please review it carefully. You can edit the text directly in the box below to make any changes you see fit. When you are satisfied with the outline, click "Approve & Continue" to proceed with character and chapter generation.
+          AI已生成以下大纲 for your story. Please review it carefully. You can edit the text directly in the box below to make any changes you see fit. When you are satisfied with the outline, click "确认并继续" to proceed with character and chapter generation.
         </p>
         <TextArea
           value={content}
@@ -38,10 +38,10 @@ const ApprovalView: React.FC<ApprovalViewProps> = ({
       
       <div className="flex justify-between items-center mt-6">
         <Button onClick={onRegenerate} disabled={isLoading} variant="secondary">
-          {isLoading ? 'Regenerating...' : 'Regenerate Outline'}
+          {isLoading ? '重新生成中...' : '重新生成大纲'}
         </Button>
         <Button onClick={onApprove} disabled={isLoading} variant="primary">
-          {isLoading ? 'Processing...' : 'Approve & Continue'}
+          {isLoading ? '处理中...' : '确认并继续'}
         </Button>
       </div>
     </div>

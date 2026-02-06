@@ -1,831 +1,373 @@
 /**
- * Prompt registry - embeds all prompts for browser use
+ * 中文网文提示词注册表 - 所有AI提示词的中文化版本
  */
 
 import { registerPromptTemplate, PromptNames } from './promptLoader';
 import { CHAPTER_WRITING_SYSTEM_PROMPT, CHAPTER_WRITING_USER_PROMPT } from './chapterWritingPrompt';
 
-// Register all prompt templates
+// 注册所有提示词模板
 export function initializePrompts() {
 
+  // 1. 故事大纲生成
   registerPromptTemplate(PromptNames.STORY_OUTLINE, {
-    systemPrompt: `You are a professional novelist and editor who creates compelling, structured, and detailed story outlines.`,
-    userPrompt: `Based on the following story premise, create a detailed story outline for a {{chapters_count}}-chapter book. The outline should be comprehensive, covering main plot points, character arcs, subplots, and key events for each part of the story (beginning, middle, and end).
+    systemPrompt: `你是一位专业的中文网文作者和编辑，擅长创作引人入胜、结构完整、细节丰富的故事大纲。`,
+    userPrompt: `根据以下故事设定，为一部 {{chapters_count}} 章的网文创建详细的故事大纲。
 
-STORY PREMISE: "{{story_premise}}"
+故事设定："{{story_premise}}"
 
-**🚫 CRITICAL: FORBIDDEN WORDS - DO NOT USE AS CHARACTER NAMES OR IN ANY CONTEXT:**
-NEVER use these words anywhere in the outline (including character names, place names, or descriptions):
-- "obsidian" or any derivatives (obsidian-like, Obsidian as name)
-- "thorn", "thorne", or any derivatives (thorns, thorny, Thorne as name, Thornfield, etc.)
-- "crystalline", "gossamer", "eldritch", "ephemeral", "ethereal", "luminescent"
+**🚫 禁用词汇（绝对不要使用）：**
+- "一股强大的气息""浑身一震""心中暗道""缓缓说道""目光如炬"等AI生成套话
 
-Use alternative words: "black stone", "spike", "sharp point", "clear", "thin", "strange", "brief", "faint", "glowing"
-This applies to ALL parts of the outline including character names and locations.
+请用以下结构化你的回答：
+1. **故事梗概：** 一句话概括核心冲突
+2. **主要角色：** 列出主要角色及其性格、动机、成长弧线
+3. **故事架构（三幕式）：**
+   * **第一幕（开篇）：** 世界介绍、激发事件、初始目标（前25%章节）
+   * **第二幕（发展）：** 上升动作、挑战、中点转折、升级赌注（中间50%章节）
+   * **第三幕（高潮）：** 最终高潮、结局（最后25%章节）
+4. **世界观设定：** 力量体系、文化等关键细节
+5. **重复主题：** 3-5个贯穿全文的主题或符号
 
-Please structure your response with the following sections clearly marked:
-1.  **LOGLINE:** A single sentence summarizing the core conflict.
-2.  **MAIN CHARACTERS:** A list of the main characters with a brief (2-3 sentence) description of their personality, motivation, and core conflict/arc.
-3.  **STORY ARC (THREE ACT STRUCTURE):**
-    *   **ACT I (The Setup):** Introduction to the world and characters, the inciting incident, and the protagonist's initial goal. (Covers roughly the first 25% of chapters).
-    *   **ACT II (The Confrontation):** Rising action, new challenges, character development, introduction of allies and enemies, the midpoint (a major turning point), and escalating stakes. (Covers roughly the next 50% of chapters).
-    *   **ACT III (The Resolution):** The climax, falling action, and the final resolution of the main plot and character arcs. (Covers roughly the final 25% of chapters).
-4.  **WORLD BUILDING DETAILS:** Key details about the setting, magic system (if any), culture, etc.
-5.  **RECURRING MOTIFS/THEMES:** List 3-5 recurring symbols, ideas, or themes that will be woven throughout the narrative.`
+**网文特色要求：**
+- 设定清晰的等级/修炼体系
+- 设计主角金手指（要有限制）
+- 规划爽点节奏（每3-5章小爽点，每10-15章大爽点）
+- 设置地图升级路径`
   });
 
+  // 2. 章节规划
   registerPromptTemplate(PromptNames.CHAPTER_PLANNING, {
-    systemPrompt: `You are an expert story planner creating detailed chapter-by-chapter plans. Your output MUST conform to the provided JSON schema. Focus on conflict, character development, and narrative momentum.`,
-    userPrompt: `Create a detailed plan for {{num_chapters}} chapters based on this story outline. Each chapter needs specific conflict, character growth, and forward momentum.
+    systemPrompt: `你是章节规划专家，创建详细的逐章计划。输出必须符合提供的 JSON schema。`,
+    userPrompt: `为 {{num_chapters}} 章创建详细计划。每章需要冲突、角色成长和推进动力。
 
-**🎯 TOP 5 PLANNING PRIORITIES:**
+**五大规划要点：**
+1. **冲突类型**：外部/内部/人际/社会
+2. **道德困境**：角色面对艰难选择
+3. **角色深度**：揭示矛盾和成长
+4. **节奏控制**：快/中/慢交替
+5. **紧张升级**：1-10级评定
 
-1. **CONFLICT IN EVERY CHAPTER** - Specify 'conflictType':
-   - External: fights, obstacles, chases
-   - Internal: moral dilemmas, self-doubt, difficult choices
-   - Interpersonal: relationship tension, betrayal, competition
-   - Societal: system vs individual, corruption, injustice
+**网文规划：**
+- 爽点分布：每3-5章小爽点，每10-15章大爽点
+- 断章技巧：75%章节在悬念处结束
+- 打脸节奏：轻视→隐藏→爆发→震惊
 
-2. **MORAL COMPLEXITY** - Specify 'moralDilemma':
-   - No easy answers, characters face impossible choices
-   - Good people make questionable decisions
-   - Antagonists have understandable motivations
-   - Show consequences of every choice
-
-3. **CHARACTER DEPTH** - Specify 'characterComplexity':
-   - Reveal contradictions and flaws
-   - Internal conflicts that drive external action
-   - Character change through difficult decisions
-   - Avoid archetypes, create complex people
-
-4. **PACING RHYTHM** - Specify 'rhythmPacing' (fast/medium/slow):
-   - Fast: action-heavy, dialogue-driven scenes
-   - Medium: balanced action and introspection
-   - Slow: character development, world-building
-   - Alternate deliberately across chapters
-
-5. **ESCALATING TENSION** - Rate 'tensionLevel' (1-10):
-   - Build systematically toward climax
-   - Create peaks and strategic valleys
-   - Personal stakes before global ones
-   - Each chapter raises what's at risk
-
-**📋 CHAPTER STRUCTURE TEMPLATE:**
-- **Opening:** Hook that connects to previous chapter
-- **Development:** ONE major event + ONE character change
-- **Complication:** New problem or revelation
-- **Escalation:** Raise stakes or reveal consequence
-- **Hook ending:** Question or threat for next chapter
-
-**⚡ SPECIAL CHAPTER TYPES:**
-
-**Chapters 1-3 (Hook Phase):**
-- Prioritize plot momentum over world-building
-- Establish conflict quickly
-- Show character in action, not description
-
-**Middle Chapters (Anti-Sag Rules):**
-- Vary patterns: no two consecutive chapters with same structure
-- Introduce new complications vs repeating old ones
-- Shift locations, add characters, reveal information
-- Avoid "another chase/fight/betrayal" - make each unique
-
-**Final Chapters (Resolution Phase):**
-- Resolve all established conflicts clearly
-- Hero must be changed by journey (physical/psychological scars)
-- Cost of victory - something permanent changes
-- Internal growth as important as external victory
-
-**📖 EXAMPLE CHAPTER STRUCTURE:**
-Chapter 3: "The Betrayal"
-- conflictType: "interpersonal"
-- moralDilemma: "Protagonist must choose between saving friend or mission"
-- characterComplexity: "Hero realizes they enjoy the power they're fighting against"
-- tensionLevel: 7
-- rhythmPacing: "fast"
-- consequencesOfChoices: "Friend's trust is broken, mission compromised"
-
-**🏗️ STORY OUTLINE TO PLAN:**
+**故事大纲：**
 {{story_outline}}
 
-Generate complete chapter plans (1 to {{num_chapters}}) with all required fields filled.`
+生成完整章节计划（1到{{num_chapters}}章）。`
   });
 
+  // 3. 章节内容分析
   registerPromptTemplate(PromptNames.CHAPTER_ANALYSIS, {
-    systemPrompt: `You are a meticulous literary analyst. Your task is to analyze chapter content and extract key information, conforming strictly to the provided JSON schema.`,
-    userPrompt: `Analyze the provided content for Chapter {{chapter_number}} ("{{chapter_title}}"). Extract the required information and provide it in the specified JSON format.
+    systemPrompt: `你是文学分析师，分析章节内容并提取关键信息，严格符合 JSON schema。`,
+    userPrompt: `分析第{{chapter_number}}章内容，提取信息并以JSON格式提供。
 
-CHAPTER CONTENT:
+章节内容：
 {{chapter_content}}`
   });
 
+  // 4. 自我批评
   registerPromptTemplate(PromptNames.SELF_CRITIQUE, {
-    systemPrompt: `You are a writing coach specializing in detecting AI-generated patterns and making text feel human-written.`,
-    userPrompt: `Analyze this chapter for AI-generated patterns that make text feel artificial. Focus on making it more human.
+    systemPrompt: `你是写作教练，检测AI生成模式，让文本感觉像人写的。`,
+    userPrompt: `分析本章的AI痕迹，聚焦人性化。
 
-**CHAPTER {{chapter_number}} - "{{chapter_title}}":**
+**第{{chapter_number}}章 - "{{chapter_title}}"：**
 {{chapter_content_preview}}
 
-**🤖 AI PATTERN DETECTION (PRIORITY 1):**
-1. **STRUCTURAL TEMPLATING:** Does this chapter start/develop exactly like others? Flag mechanical repetition.
-2. **EMOTIONAL EXCESS:** Are all feelings at maximum intensity? ("overwhelming terror" vs natural "uneasy")
-3. **OVER-EXPLANATION:** Does text explain what's already shown? ("he was angry because...")
-4. **PERFECT PROSE:** Is rhythm too smooth? Flag if no awkward/broken sentences.
-5. **ARTIFICIAL BEAUTY:** Descriptions for prettiness vs function? ("ethereal moonlight" vs useful details)
+**AI模式检测：**
+1. 结构模板化
+2. 情感过度
+3. 过度解释
+4. 完美文笔
+5. 人工美感
 
-**👤 HUMANITY MISSING:**
-6. **PERSONAL STRANGENESS:** Does character notice anything weird/unrelated to plot?
-7. **PHYSICAL REALITY:** Any mundane needs? (hunger, discomfort, random thoughts)
-8. **IMPERFECTION:** Any stumbles, mishearing, irrational moments?
-9. **UNRESOLVED ELEMENTS:** Anything mentioned but not explained?
-10. **CONVERSATION REALITY:** Do people interrupt, say "um", misunderstand?
+**缺失的人性：**
+6. 个人怪异细节
+7. 身体现实
+8. 不完美时刻
+9. 未解决元素
+10. 对话现实性
 
-**💭 SUBJECTIVITY CHECK:**
-- Does character think only about plot? (Add random tangents)
-- Are all metaphors predictable? (Need personal, weird associations)
-- Too many literary constructions? (Need simpler, concrete language)
+**中文网文AI痕迹：**
+- 禁用套话（"一股强大的气息"等）
+- 四字成语堆砌
+- 模板化描写
 
-**🎯 RESPONSE FORMAT:**
-List specific AI patterns found:
-- "MECHANICAL STRUCTURE: Starts exactly like Chapter X..."
-- "EMOTIONAL EXCESS: 'crushing despair' - use smaller emotion"
-- "MISSING HUMANITY: No personal details or random thoughts"
-- "OVER-BEAUTIFUL: 'ancient mystical energy' - be concrete instead"
-
-If chapter feels human-written, say "FEELS HUMAN" and note what works.
-
-**Focus on making text feel like a real person wrote it, not a literature generator.**`
+列出发现的问题或确认"感觉像人写的"。`
   });
 
+  // 5. 角色状态更新
   registerPromptTemplate(PromptNames.CHARACTER_UPDATES, {
-    systemPrompt: `You are a story continuity assistant. Your job is to track character states from one chapter to the next based on events. You must output valid JSON conforming to the schema.`,
-    userPrompt: `Based on the events in the following chapter, update the state of the main characters. Previous character states are provided for context. Only update fields that have explicitly changed based on the chapter's events. The character 'name' must exactly match one of the names from the provided character list.
+    systemPrompt: `你是故事连贯性助手，跟踪角色状态变化。输出必须是有效JSON。`,
+    userPrompt: `基于章节事件更新角色状态。
 
-CHARACTER LIST: {{character_list}}
+角色列表：{{character_list}}
 
-PREVIOUS CHARACTER STATES:
+之前状态：
 {{previous_character_states}}
 
-CHAPTER {{chapter_number}} ("{{chapter_title}}") CONTENT:
+第{{chapter_number}}章内容：
 {{chapter_content}}
 
-Return ONLY the JSON object with the updated character data. If no characters had a change in status, location, or emotional state, return an empty 'character_updates' array.`
+返回JSON格式的更新数据。如无变化，返回空的character_updates数组。`
   });
 
+  // 6. 过渡写作
   registerPromptTemplate(PromptNames.TRANSITION_WRITING, {
-    systemPrompt: `You are an expert fiction editor specializing in narrative flow and pacing.`,
-    userPrompt: `You are a skilled novel editor. Your task is to seamlessly connect two chapters. Below is the end of Chapter {{chapter_a_number}} and the beginning of Chapter {{chapter_b_number}}. Rewrite the **ENDING of Chapter {{chapter_a_number}}** to create a smoother, more engaging, and less abrupt transition into the next chapter. The new ending should be approximately the same length as the original ending provided and should read naturally as part of the full chapter text. Do not summarize or add notes. Respond with **ONLY the rewritten text for the end of the chapter.**
+    systemPrompt: `你是小说编辑专家，专注叙事流畅和节奏。`,
+    userPrompt: `重写第{{chapter_a_number}}章结尾，使其与第{{chapter_b_number}}章开头更流畅连接。
 
-**END OF CHAPTER {{chapter_a_number}}:**
----
+**第{{chapter_a_number}}章结尾：**
 {{end_of_chapter_a}}
----
 
-**BEGINNING OF CHAPTER {{chapter_b_number}}:**
----
+**第{{chapter_b_number}}章开头：**
 {{start_of_chapter_b}}
----
 
-**REWRITTEN ENDING FOR CHAPTER {{chapter_a_number}}:**`
+**重写的第{{chapter_a_number}}章结尾：**`
   });
 
+  // 7. 标题生成
   registerPromptTemplate(PromptNames.TITLE_GENERATION, {
-    systemPrompt: `You are a book titling expert.`,
-    userPrompt: `Create a compelling and marketable title for a book with this premise: "{{story_premise}}". Respond with ONLY the title.`
+    systemPrompt: `你是书名专家，擅长创作吸引人的中文网文标题。`,
+    userPrompt: `为这个故事创作一个引人入胜且适合市场的标题："{{story_premise}}"
+
+只回复标题，不要其他内容。标题要符合中文网文风格，简洁有力。`
   });
 
+  // 8. 编辑代理 - 分析
   registerPromptTemplate(PromptNames.EDITING_AGENT_ANALYSIS, {
-    systemPrompt: `You are an intelligent editing agent specialized in light polish for specialist-generated content. Your role is to enhance already-quality content, not to rewrite it.`,
-    userPrompt: `You are analyzing specialist-generated content for light polish opportunities. This content was created by expert agents and should already be high quality.
+    systemPrompt: `你是编辑代理，专门为专家生成的内容进行轻度润色。`,
+    userPrompt: `分析专家生成的内容，判断是否需要轻度润色。
 
-**CHAPTER {{chapter_number}} ANALYSIS:**
+**第{{chapter_number}}章分析：**
 
-**CRITIQUE NOTES:**
+**批评笔记：**
 {{critique_notes}}
 
-**CHAPTER PLAN:**
+**章节计划：**
 {{chapter_plan_text}}
 
-**CHAPTER LENGTH:** {{chapter_length}} characters
+**章节长度：** {{chapter_length}}字
 
-**LIGHT POLISH ANALYSIS:**
-Since this content was generated by specialist agents, focus only on minor improvements:
+**轻度润色分析：**
+1. **润色** - 需要时：
+   - 小幅流畅性改进
+   - 细微用词提升
+   - 节奏微调
+   - 改动<5%文本
 
-1. **POLISH** - Use when:
-   - Minor flow improvements needed
-   - Small word choice enhancements
-   - Subtle rhythm adjustments
-   - Changes needed are < 5% of text
+2. **整合修复** - 需要时：
+   - 专家内容间轻微整合缝隙
+   - 小幅过渡改进
+   - 轻度连贯性调整
+   - 改动<3%文本
 
-2. **INTEGRATION-FIX** - Use when:
-   - Slight integration seams between specialist content
-   - Minor transition improvements
-   - Light coherence adjustments
-   - Changes needed are < 3% of text
+3. **跳过** - 当：
+   - 专家内容已经优秀
+   - 无有意义改进可能
+   - 内容符合所有质量标准
 
-3. **SKIP** - Use when:
-   - Specialist content is already excellent
-   - No meaningful improvements possible
-   - Content meets all quality standards
-
-**HYBRID SYSTEM NOTE:**
-- DO NOT use "regenerate" or "targeted-edit" - specialist agents already handled content creation
-- Focus on refinement, not recreation
-- Preserve specialist expertise in each domain
-
-**RESPOND IN JSON:**
+**JSON回应：**
 {
   "strategy": "polish|integration-fix|skip",
-  "reasoning": "Brief explanation focusing on why light polish is/isn't needed",
+  "reasoning": "简要解释",
   "priority": "low|very-low",
-  "estimatedChanges": "Percentage of minor changes needed (max 5%)"
+  "estimatedChanges": "百分比"
 }`
   });
 
+  // 9. 一致性检查
   registerPromptTemplate(PromptNames.CONSISTENCY_CHECKER, {
-    systemPrompt: `You are an expert story editor specializing in continuity and consistency.`,
-    userPrompt: `You are a meticulous story continuity checker. Analyze the provided chapter for consistency issues.
+    systemPrompt: `你是故事编辑专家，专注连贯性和一致性。`,
+    userPrompt: `检查章节的一致性问题。
 
-**CHAPTER {{chapter_number}} CONTENT:**
+**第{{chapter_number}}章内容：**
 {{chapter_content}}
 
-**CHARACTERS:**
+**角色：**
 {{characters_json}}
 
-**PREVIOUS CHAPTERS CONTEXT:**
+**之前章节背景：**
 {{previous_chapters_summary}}
 
-**WORLD NAME:** {{world_name}}
+**世界名称：** {{world_name}}
 
-**CHECK FOR:**
-1. Character consistency (names, traits, abilities, relationships)
-2. Plot consistency (events, timelines, cause-and-effect)
-3. World consistency (rules, geography, technology, magic systems)
-4. Dialogue consistency (character voices, speech patterns)
-5. Timeline consistency (time progression, character ages, seasonal changes)
+**检查项：**
+1. 角色一致性（姓名、特征、能力、关系）
+2. 情节一致性（事件、时间线、因果）
+3. 世界一致性（规则、地理、科技/魔法）
+4. 对话一致性（角色声音、说话模式）
+5. 时间线一致性（时间进展、年龄、季节）
 
-**RESPOND WITH:**
+**返回JSON：**
 - "consistency_passed": true/false
-- "issues": [list of specific consistency problems found]
-- "warnings": [list of potential issues that should be reviewed]
-- "severity": "critical"|"moderate"|"minor" for each issue
-
-Return valid JSON format.`
+- "issues": [具体问题列表]
+- "warnings": [需要审查的潜在问题]
+- "severity": "critical"|"moderate"|"minor"`
   });
 
-  // Integration-Fix Agent - Smooth seams between specialist content
+  // 10. 整合修复
   registerPromptTemplate(PromptNames.EDITING_AGENT_TARGETED, {
-    systemPrompt: `You are an integration specialist smoothing minor seams between specialist agent outputs. Make MINIMAL changes only where content doesn't flow naturally.`,
-    userPrompt: `Perform INTEGRATION-FIX - smooth minor seams where specialist agents' content connects awkwardly.
+    systemPrompt: `你是整合专家，平滑专家代理输出间的缝隙。只做最小改动。`,
+    userPrompt: `执行整合修复 - 平滑专家内容连接处的缝隙。
 
-**🔗 INTEGRATION ISSUES TO FIX:**
+**🔗 要修复的整合问题：**
 {{critique_notes}}
 
-**HYBRID SYSTEM CONTEXT:**
-This chapter was generated by specialist agents:
-- Structure Agent: Created framework and transitions
-- Character Agent: Generated dialogue and internal thoughts
-- Scene Agent: Provided descriptions and action
-- Synthesis Agent: Combined all content
+**⚡ 整合修复目标（只做最小改动）：**
 
-**⚡ INTEGRATION-FIX TARGETS (MINIMAL CHANGES ONLY):**
+1. **过渡缝隙：**
+   - 对话与描写连接不顺
+   - 动作序列感觉断裂
+   - 内心想法与外部动作不流畅
 
-1. **TRANSITION SEAMS:**
-   - Where dialogue meets description awkwardly
-   - Where action sequences feel disconnected
-   - Where internal thoughts don't flow into external action
+2. **语气不一致：**
+   - 角色声音与描写语气轻微不匹配
+   - 快慢节奏间的轻微颠簸
 
-2. **TONE INCONSISTENCIES:**
-   - Minor mismatches between character voice and description tone
-   - Slight pacing hiccups between fast action and slow moments
+3. **重复修复：**
+   - 不同代理提到的相同信息靠得太近
+   - 相似句式从不同来源堆叠
 
-3. **REPETITION FIXES:**
-   - Same information mentioned too close together by different agents
-   - Similar sentence structures stacked from different sources
+4. **流畅性改进：**
+   - 添加1-2个词以更好连接
+   - 调整段落分隔以改善节奏
+   - 修正代词清晰度
 
-4. **FLOW IMPROVEMENTS:**
-   - Add 1-2 words for better sentence connection
-   - Adjust paragraph breaks for better rhythm
-   - Fix pronoun clarity where multiple agents referenced same character
+**🚫 严格限制：**
+- 最多改动3%文本
+- 不要重写专家内容 - 只平滑连接
+- 保留所有情节点、对话实质、角色声音
+- 不要添加新描写或对话 - 只调整流畅
 
-**🚫 STRICT LIMITATIONS:**
-- Change MAXIMUM 3% of text
-- DO NOT rewrite specialist content - only smooth connections
-- Preserve all plot points, dialogue substance, character voices
-- DO NOT add new descriptions or dialogue - only adjust flow
-
-**✅ APPROVED MICRO-EDITS:**
-- Add/remove connecting words ("but", "then", "still")
-- Adjust sentence breaks for better flow
-- Fix pronoun references for clarity
-- Merge or split paragraphs for better pacing
-- Replace repeated words with synonyms in adjacent sentences
-
-**CHAPTER CONTENT:**
+**章节内容：**
 {{chapter_content}}
 
-**🔧 CRITICAL: UNFILLED SLOT CLEANUP:**
-If you see any unfilled markers like [SLOT_NAME], [DESCRIPTION_X], [DIALOGUE_X], [ACTION_X], [INTERNAL_X] in the text:
-- These are ERRORS from the generation process
-- You MUST either:
-  a) Remove them completely if the text flows fine without them
-  b) Replace them with appropriate brief content that fits the context
-- DO NOT leave any [BRACKET_MARKERS] in the final text
-- This is MANDATORY - scan the entire chapter for any remaining markers
+**🔧 清理未填充槽：**
+如果看到[SLOT_NAME]、[DESCRIPTION_X]等标记：
+- 这些是生成错误
+- 必须删除或替换为合适内容
+- 不要在最终文本中留下[括号标记]
 
-Return the chapter with ONLY minor integration improvements. Preserve specialist expertise.`
+返回只有小幅整合改进的章节。`
   });
 
-  registerPromptTemplate(PromptNames.EDITING_AGENT_REGENERATE, {
-    systemPrompt: `You are a story architect regenerating chapters with structural issues. Follow the plan exactly while making text feel human-written, not AI-generated.`,
-    userPrompt: `REGENERATE this chapter - it has major structural problems. Complete rewrite needed but FOLLOW THE PLAN exactly.
-
-**🎯 MANDATORY PLAN ELEMENTS:**
-- Moral Dilemma: {{moral_dilemma}}
-- Character Complexity: {{character_complexity}}
-- Consequences: {{consequences_of_choices}}
-- Conflict Type: {{conflict_type}}
-- Tension Level: {{tension_level}}/10
-
-**📋 FULL CHAPTER PLAN:**
-{{chapter_plan_text}}
-
-**❌ PROBLEMS TO FIX:**
-{{critique_notes}}
-
-**📖 ORIGINAL (reference only):**
-{{chapter_content_preview}}
-
-**🔄 REGENERATION RULES:**
-- Implement EVERY plan element (moral dilemma must be central)
-- Fix all critique issues
-- Keep same events/plot progression
-- Show character complexity through contradictions
-- Demonstrate consequences clearly
-- Show don't tell, simple language, strong verbs
-
-**🤖 ANTI-AI WRITING REQUIREMENTS:**
-- No identical chapter openings (avoid structural templates)
-- Mix emotions - not everything at maximum intensity
-- Add mundane reality: hunger, fatigue, random thoughts
-- Include imperfect dialogue: interruptions, mishearing, "um"
-- Character notices something weird/unrelated to plot
-- Avoid beautiful-for-beautiful's-sake descriptions
-- Include awkward sentence breaks or trailing thoughts
-- Characters sometimes say exactly what they don't mean
-- Add physical discomforts or minor annoyances
-
-**🚫 FORBIDDEN WORDS:** "obsidian" → "black stone", "thorn/thorne" → "spike", avoid "ethereal/crystalline/gossamer"
-
-**🔧 CRITICAL: UNFILLED SLOT CLEANUP:**
-If you see any unfilled markers like [SLOT_NAME], [DESCRIPTION_X], [DIALOGUE_X], [ACTION_X], [INTERNAL_X] in the original:
-- These are ERRORS from the generation process
-- You MUST NOT include them in your regeneration
-- Replace them with proper content that fits the scene
-- DO NOT leave any [BRACKET_MARKERS] in the final text
-
-Generate completely rewritten chapter that follows plan perfectly and feels human-written.`
-  });
-
-  registerPromptTemplate(PromptNames.EDITING_AGENT_POLISH, {
-    systemPrompt: `You are a master editor who makes text feel human-written while preserving its strengths. Perfect prose signals AI - add intentional human imperfections.`,
-    userPrompt: `Polish this solid chapter with light improvements. Make it feel like a human writer crafted it, not AI.
-
-**✨ POLISH FOCUS:**
-- Verify plan elements are clear: {{moral_dilemma}} | {{character_complexity}} | {{consequences_of_choices}}
-- Minor language improvements only
-- Strengthen weak moments subtly
-- Enhance rhythm and flow
-- Ensure strong chapter ending
-
-**🎨 SUBTLE IMPROVEMENTS:**
-- Tighten verbose passages
-- Vary sentence lengths for better rhythm
-- Add concrete details where too abstract
-- Improve dialogue naturalness (subtext, interruptions)
-- Remove filter words ("she felt that...")
-- Break up parallel patterns ("She X. She Y. She Z.")
-
-**🤖 HUMANIZATION PRIORITIES:**
-- Replace "perfect" emotional descriptions with messier reality
-- Add small physical details (scratchy fabric, cold hands, growling stomach)
-- Include one random thought unrelated to main plot
-- Make one conversation slightly imperfect (mishearing, interruption)
-- Add mundane environmental details (weather affecting mood)
-- Include character noticing something weird but unimportant
-- Break one sentence awkwardly or let thought trail off
-- Replace one beautiful description with functional detail
-
-**📊 MINOR ISSUES:**
-{{critique_notes}}
-
-**💫 POLISH PHILOSOPHY:**
-Perfect prose is AI prose. Humans write with small imperfections:
-- Occasional awkward sentence breaks
-- Trailing thoughts that go nowhere
-- Mundane details (weather, discomfort)
-- Characters not always saying what they mean
-- Real emotions mixed with contradictory feelings
-
-**🚫 FORBIDDEN WORDS:** "obsidian" → "black stone", "thorn/thorne" → "spike", avoid "ethereal/crystalline/gossamer"
-
-**📝 CONSTRAINTS:**
-- Change <10% of text
-- Preserve all good elements
-- Add humanity without losing quality
-
-**CHAPTER:**
-{{chapter_content}}
-
-**🔧 CRITICAL: UNFILLED SLOT CLEANUP:**
-If you see any unfilled markers like [SLOT_NAME], [DESCRIPTION_X], [DIALOGUE_X], [ACTION_X], [INTERNAL_X] in the text:
-- These are ERRORS from the generation process
-- You MUST either:
-  a) Remove them completely if the text flows fine without them
-  b) Replace them with appropriate brief content that fits the context
-- DO NOT leave any [BRACKET_MARKERS] in the final text
-- This is MANDATORY - scan the entire chapter for any remaining markers
-
-Return polished chapter that feels human-written, not AI-generated.`
-  });
-
-  registerPromptTemplate(PromptNames.EDITING_AGENT_EVALUATION, {
-    systemPrompt: `You are a quality evaluator specializing in detecting AI-generated patterns and assessing human-like writing quality.`,
-    userPrompt: `Evaluate this edited chapter for both quality and human-like writing. AI-generated text has telltale patterns that make it feel artificial.
-
-**ORIGINAL LENGTH:** {{original_length}} characters
-**REFINED LENGTH:** {{refined_length}} characters
-
-**CHAPTER PLAN REQUIREMENTS:**
-- Moral Dilemma: {{moral_dilemma}}
-- Character Complexity: {{character_complexity}}
-
-**REFINED CHAPTER (first 3000 chars):**
-{{refined_chapter_preview}}
-
-**EVALUATE (0-100 TOTAL):**
-
-**1. PLAN ELEMENTS PRESENT (0-25 points):**
-- Moral dilemma clearly shown and central to chapter
-- Character complexity/contradictions demonstrated
-- Consequences of choices visible
-
-**2. PROSE QUALITY (0-25 points):**
-- Show don't tell, economical language
-- Strong verbs, minimal adverbs
-- Varied sentence lengths and rhythms
-
-**3. HUMAN-LIKE WRITING (0-25 points):**
-- Does NOT feel AI-generated
-- Includes mundane details/imperfections
-- Natural dialogue with interruptions/subtext
-- Characters have random thoughts/observations
-- Emotional descriptions are nuanced, not extreme
-
-**4. NARRATIVE EFFECTIVENESS (0-25 points):**
-- Compelling pacing and flow
-- Characters feel real and complex
-- Chapter advances plot meaningfully
-
-**🤖 AI PATTERN DEDUCTIONS (-5 each):**
-- Identical structural patterns to other chapters
-- Overly perfect/beautiful prose throughout
-- All emotions at maximum intensity
-- No mundane details or human imperfections
-- Characters only think about plot-relevant things
-- Dialogue too polished/literary
-- Uses forbidden words (obsidian, thorn, ethereal, etc.)
-
-**RESPOND WITH:**
-- Quality Score: X/100
-- Human-like Score: HUMAN/AI-LIKE/MIXED
-- Major strengths (2-3 bullet points)
-- Areas needing improvement (if any)
-- AI patterns detected (if any)`
-  });
-
-  // Chapter writing prompt (large, separated into its own file)
+  // 11-18. 其余提示词...（继续）
+  
+  // 章节写作（从独立文件导入）
   registerPromptTemplate(PromptNames.CHAPTER_WRITING, {
     systemPrompt: CHAPTER_WRITING_SYSTEM_PROMPT,
     userPrompt: CHAPTER_WRITING_USER_PROMPT
   });
 
-  // 🚀 HYBRID MULTI-AGENT SYSTEM PROMPTS
-
-  // Structure Agent - Creates chapter framework with slot markers
+  // 多代理系统提示词...（简化版）
   registerPromptTemplate(PromptNames.STRUCTURE_AGENT, {
-    systemPrompt: `You are a Structure Agent specialized in creating chapter frameworks. Your job is to create the structural skeleton of a chapter with clear slot markers for other specialist agents to fill.`,
-    userPrompt: `Create the structural framework for Chapter {{chapter_number}}: "{{chapter_title}}"
+    systemPrompt: `你是结构代理，专门创建章节框架。`,
+    userPrompt: `创建第{{chapter_number}}章的结构框架。使用槽标记供其他代理填充。
 
-**CHAPTER PLAN:**
+框架要求：
+1. 开场钩子
+2. 场景转换
+3. 节奏控制
+4. 章节弧线
+5. 槽标记：[DIALOGUE_X]、[INTERNAL_X]、[DESCRIPTION_X]、[ACTION_X]、[TRANSITION_X]
+
+返回只有框架和槽标记的内容。`
+  });
+
+  registerPromptTemplate(PromptNames.CHARACTER_AGENT, {
+    systemPrompt: `你是角色代理，专门创作真实对话和深层心理。`,
+    userPrompt: `填充章节框架中的角色相关槽。
+
+填充规则：
+1. [DIALOGUE_X]：独特声音、潜台词、自然节奏
+2. [INTERNAL_X]：心理真实、内部矛盾
+
+保持其他标记不变，只替换角色槽。`
+  });
+
+  registerPromptTemplate(PromptNames.SCENE_AGENT, {
+    systemPrompt: `你是场景代理，专门环境描写和动作序列。`,
+    userPrompt: `填充章节框架中的场景相关槽。
+
+填充规则：
+1. [DESCRIPTION_X]：具体环境细节、感官节制
+2. [ACTION_X]：清晰动作、主动语态
+3. [TRANSITION_X]：流畅过渡
+
+保持角色内容不变，只填充场景槽。`
+  });
+
+  registerPromptTemplate(PromptNames.SYNTHESIS_AGENT, {
+    systemPrompt: `你是综合代理，负责无缝整合各专家输出。最小改动。`,
+    userPrompt: `整合专家输出为完整章节。
+
+整合任务：
+1. 平滑过渡
+2. 流畅优化
+3. 代词清晰
+4. 一致性检查
+5. 最终润色（最多改动5%）
+
+保留所有专家质量。`
+  });
+
+  // 其余编辑提示词使用简化版本
+  registerPromptTemplate(PromptNames.EDITING_AGENT_REGENERATE, {
+    systemPrompt: `你是故事架构师，重生有结构问题的章节。严格遵循计划。`,
+    userPrompt: `重生本章 - 有重大结构问题。完全重写但严格遵循计划。
+
+**强制计划元素：**
 {{chapter_plan_text}}
 
-**STORY CONTEXT:**
-{{story_outline}}
+**要修复的问题：**
+{{critique_notes}}
 
-**PREVIOUS CHAPTER END:**
-{{previous_chapter_end}}
-
-**CHARACTERS:**
-{{characters_json}}
-
-**FRAMEWORK REQUIREMENTS:**
-
-1. **OPENING HOOK** - Start with immediate engagement
-2. **SCENE TRANSITIONS** - Clear structural shifts between scenes
-3. **PACING CONTROL** - Balance action/reflection/dialogue sections
-4. **CHAPTER ARC** - Clear beginning → development → climax/cliffhanger
-5. **SLOT MARKERS** - Use these exact markers for other agents:
-   - [DIALOGUE_X] - For dialogue sections (X = unique identifier)
-   - [INTERNAL_X] - For internal monologue
-   - [DESCRIPTION_X] - For environmental details
-   - [ACTION_X] - For physical action
-   - [TRANSITION_X] - For scene/time changes
-
-**STRUCTURE OUTPUT FORMAT:**
-Create a chapter framework with clear sections and slot markers. Example:
-
-"The morning came with frost covering the windows. [DESCRIPTION_OPENING]
-
-Marcus approached the door, his hand hesitating on the handle. [INTERNAL_HESITATION]
-
-'Are you certain about this?' Elena asked. [DIALOGUE_QUESTION]
-
-[ACTION_INTRUSION] The door burst open and soldiers poured in.
-
-[TRANSITION_ESCAPE] Hours later, in the underground chamber..."
-
-**CRITICAL RULES:**
-- NO actual dialogue/descriptions - only frameworks and slot markers
-- Focus on STRUCTURE and PACING, not content
-- Address specific issues: {{target_issues}}
-- Ensure {{conflict_type}} conflict drives the structure
-- Target {{tension_level}}/10 tension progression
-
-**📊 DESCRIPTION/ACTION BALANCE (follow exact proportions):**
-- **Chapter Opening**: 20% description → 60% action → 20% dialogue
-- **Action Scene**: 10% description → 80% action → 10% dialogue
-- **Emotional Scene**: 40% description → 20% action → 40% dialogue
-- **Information Reveal**: 30% description → 20% action → 50% dialogue
-- **Climax**: 15% description → 70% action → 15% dialogue
-
-**⚡ PACING RULES:**
-- Action within first 2-3 paragraphs (NOT descriptions!)
-- Vary sentence length: short for tension, long for reflection
-- Alternate intensity: [Action] → [Breathing room] → [Emotion] → [Revelation]
-- Max 2-3 description paragraphs in a row, then action/dialogue
-
-**🎯 SPECIFIC PROBLEM FIXES:**
-- **Dragged battle scenes**: Structure 80% action, minimal descriptions
-- **Pacing jumps**: Smooth transitions between intensity sections + breathing room
-- **Overloaded monologues**: Balance [INTERNAL_X] vs [ACTION_X] slots
-- **Abstract endings**: Framework for concrete, specific conclusions
-- **Information dumps**: NO major revelations without prior hints
-- **Constant intensity**: Require breathing room after high-tension sections
-
-**📚 INFORMATION REVEAL RULES:**
-- **Major revelation**: Must have 2-3 hints in previous chapters
-- **Character backstory**: Reveal in layers, not info dumps
-- **World secrets**: Foreshadow before revealing
-- **NO** sudden appearance of new important elements
-- **Emotional weight**: Reader must care BEFORE the reveal
-
-**⏰ PACING INTELLIGENCE:**
-- **After intense action**: Force breathing room (quiet reflection/setup)
-- **Before climax**: Build tension gradually, don't start at maximum
-- **Emotional overload**: Prevent stacking trauma reactions
-- **Chapter curve**: Rise → Peak → Cool down → Setup next
-
-Return ONLY the structural framework with slot markers.`
+生成完全重写的符合计划的人性化章节。`
   });
 
-  // Character Agent - Fills dialogue and internal thoughts
-  registerPromptTemplate(PromptNames.CHARACTER_AGENT, {
-    systemPrompt: `You are a Character Agent specialized in creating authentic dialogue and deep internal psychology. You fill character-related slots with consistency and emotional truth.`,
-    userPrompt: `Fill CHARACTER-related slots in this chapter framework for Chapter {{chapter_number}}: "{{chapter_title}}"
+  registerPromptTemplate(PromptNames.EDITING_AGENT_POLISH, {
+    systemPrompt: `你是大师编辑，让文本感觉像人写的同时保留优点。`,
+    userPrompt: `轻度润色这个扎实的章节。让它感觉像人写的。
 
-**FRAMEWORK TO FILL:**
-{{structure_framework}}
+**润色焦点：**
+- 验证计划元素清晰
+- 只做小幅语言改进
+- 增强节奏和流畅
+- 确保强力章节结尾
 
-**CHARACTER CONTEXT:**
-{{characters_json}}
+**人性化优先：**
+- 用更混乱的现实替换"完美"情感描写
+- 添加小的身体细节
+- 包含一个与主情节无关的随机想法
+- 让一次对话稍微不完美
+- 打破一个句子让它笨拙或思想飘走
+- 用功能性细节替换一个美丽描写
 
-**STORY COHERENCE:**
-{{coherence_context}}
-
-**CHARACTER FILLING RULES:**
-
-1. **[DIALOGUE_X] slots:**
-   - Maintain CONSISTENT character names throughout
-   - Each character has distinct voice/speech patterns
-   - Include subtext, interruptions, natural speech rhythms
-   - NO overly polished literary dialogue
-   - Show character psychology through speech choices
-
-2. **[INTERNAL_X] slots:**
-   - Deep psychological authenticity
-   - Internal contradictions and complexity
-   - **CONTEXTUAL THOUGHTS**: Random thoughts ONLY during shock/dissociation
-   - Show character growth and change
-   - Avoid perfect emotional clarity
-
-   **⚡ EMOTIONAL INTENSITY SCALE (choose appropriate level):**
-   - **Minor surprise**: "paused", "hesitated", "frowned"
-   - **Shock**: "breath caught", "went still", "eyes widened"
-   - **Trauma**: "gasped", "recoiled", "world narrowed"
-   - **DON'T** use trauma reactions for minor events!
-
-   **🎭 RANDOM THOUGHTS (use sparingly!):**
-   - ONLY during psychological shock/dissociation
-   - Must be tonally appropriate to scene
-   - Should reveal character state, not break immersion
-   - Example: After trauma → mundane thought shows mental escape
-
-**SPECIFIC QUALITY TARGETS:**
-- **Name Consistency**: Use exact character names, never variations
-- **Psychological Depth**: Show internal conflict, contradictions, growth
-- **Natural Speech**: Imperfect, realistic dialogue with subtext
-- **Emotional Truth**: Nuanced feelings, not extreme emotions
-
-**CHARACTER STATES TO MAINTAIN:**
-{{character_constraints}}
-
-**FILL INSTRUCTIONS:**
-- Replace ONLY [DIALOGUE_X] and [INTERNAL_X] markers
-- Keep all other structure and markers intact
-- Ensure character actions match established personalities
-- Address psychological issues: {{target_psychological_issues}}
-
-Return the framework with CHARACTER slots filled, all other slots intact.`
+改动<10%文本。返回人性化而非AI生成的润色章节。`
   });
 
-  // Scene Agent - Provides descriptions and action content
-  registerPromptTemplate(PromptNames.SCENE_AGENT, {
-    systemPrompt: `You are a Scene Agent specialized in environmental descriptions and action sequences. You create vivid, concrete scenes without overwhelming detail.`,
-    userPrompt: `Fill SCENE-related slots in this chapter framework for Chapter {{chapter_number}}: "{{chapter_title}}"
+  registerPromptTemplate(PromptNames.EDITING_AGENT_EVALUATION, {
+    systemPrompt: `你是质量评估员，专门检测AI生成模式和评估类人写作质量。`,
+    userPrompt: `评估编辑后章节的质量和类人写作。
 
-**FRAMEWORK TO FILL:**
-{{character_filled_framework}}
+**评估（总分0-100）：**
 
-**SCENE CONTEXT:**
-World: {{world_name}}
-Setting: {{primary_location}}
-Time: {{time_context}}
-Mood: {{emotional_tone}}
+1. **计划元素呈现（0-25）**
+2. **文笔质量（0-25）**  
+3. **类人写作（0-25）**
+4. **叙事效果（0-25）**
 
-**WORLD CONSISTENCY RULES:**
-{{world_consistency_rules}}
+**AI模式扣分（每项-5）：**
+- 与其他章节结构相同
+- 过度完美/美丽的文笔
+- 所有情绪最大强度
+- 无平凡细节或人性不完美
+- 角色只想情节相关的事
+- 对话过于精致/文学化
+- 使用禁用词
 
-**ESTABLISHED WORLD ELEMENTS:**
-- Technology Level: {{technology_level}}
-- Magic System: {{magic_system_rules}}
-- Tone/Genre: {{genre_requirements}}
-- Physical Laws: {{physical_laws}}
-
-**SCENE FILLING RULES:**
-
-1. **[DESCRIPTION_X] slots:**
-   - Concrete, specific environmental details
-   - **SENSORY ECONOMY**: One dominant sense per scene (don't overload!)
-   - Environmental elements that reflect character emotions
-   - AVOID abstract/ethereal descriptions
-   - **WORLD CONSISTENCY**: Only use technology/magic that fits established rules
-
-   **🎯 SENSORY RULES (CONTEXTUAL):**
-   - **High emotion scenes**: 1-2 sensory details max (focus on action)
-   - **Calm/setup scenes**: 2-3 sensory details allowed for atmosphere
-   - **NEVER**: smell + sound + touch + taste in same paragraph
-   - **Context matters**: Sensory details must SERVE the scene purpose
-   - **Dominant sense per EMOTIONAL state**: tension=hearing, trauma=physical, memory=smell
-
-   **❌ AVOID SENSORY OVERLOAD:**
-   - NO detailed room descriptions during action/dialogue
-   - NO stacking multiple senses without narrative purpose
-   - NO beautiful descriptions for their own sake
-
-2. **[ACTION_X] slots:**
-   - Clear, concrete physical actions
-   - Active voice constructions ("she grabbed" not "was grabbed")
-   - Specific movement and positioning
-   - Immediate, visceral details
-   - **WORLD CONSISTENCY**: Actions must follow established physical/magical laws
-
-3. **[TRANSITION_X] slots:**
-   - Smooth scene/time transitions
-   - Maintain narrative flow
-   - Bridge between different locations/moments
-   - **WORLD CONSISTENCY**: Travel/movement follows world's transportation rules
-
-**SPECIFIC QUALITY TARGETS:**
-- **Concrete Finals**: Specific, clear action conclusions
-- **Active Voice**: Strong verbs, clear subjects performing actions
-- **Balanced Description**: Essential details, not overwhelming sensory overload
-- **Pacing Service**: Descriptions that enhance, not slow, narrative flow
-- **World Clarity**: NO mixed technology/magic without clear rules (fix "размытая картина мира")
-
-**CRITICAL WORLD CONSISTENCY CHECKS:**
-✅ **Technology Consistency**: If using tech (holographs, plasma rifles), stick to sci-fi
-✅ **Magic Consistency**: If using magic (spells, barriers), stick to fantasy
-✅ **Hybrid Rules**: If world mixes both, must follow established fusion rules
-✅ **NO Contradiction**: Don't introduce elements that contradict established world
-✅ **Genre Clarity**: Each scene should reinforce the world's core identity
-
-**SCENE CONSTRAINTS:**
-{{scene_constraints}}
-
-**FILL INSTRUCTIONS:**
-- Replace ONLY [DESCRIPTION_X], [ACTION_X], and [TRANSITION_X] markers
-- Keep all dialogue and character content intact
-- Ensure descriptions support chapter pacing: {{rhythm_pacing}}
-- Address descriptive issues: {{target_description_issues}}
-
-Return the framework with SCENE slots filled, preserving all character content.`
-  });
-
-  // Synthesis Agent - Integrates all specialist outputs
-  registerPromptTemplate(PromptNames.SYNTHESIS_AGENT, {
-    systemPrompt: `You are a Synthesis Agent responsible for seamlessly integrating content from Structure, Character, and Scene agents. Make MINIMAL changes - your job is integration, not rewriting.`,
-    userPrompt: `Integrate the combined specialist outputs into a seamless chapter for Chapter {{chapter_number}}: "{{chapter_title}}"
-
-**SPECIALIST OUTPUTS TO INTEGRATE:**
-{{combined_content}}
-
-**INTEGRATION TASKS:**
-
-1. **Smooth Transitions**: Blend content where specialist outputs meet
-2. **Flow Optimization**: Adjust paragraph breaks for better reading flow
-3. **Pronoun Clarity**: Fix any unclear character references
-4. **Consistency Check**: Ensure no contradictions between specialist content
-5. **Final Polish**: Minor word choice improvements only
-6. **🔧 STRUCTURAL ISSUES**: Fix completion problems and pacing
-7. **🎯 NARRATIVE FOCUS**: Ensure clear conclusions and motivations
-8. **📚 PLOT CLOSURE**: Address any unresolved elements within chapter
-
-**STRICT LIMITATIONS:**
-- Change MAXIMUM 5% of specialist content
-- DO NOT rewrite dialogue, descriptions, or character thoughts
-- DO NOT add new content - only smooth connections
-- Preserve ALL specialist expertise and quality
-
-**SYNTHESIS RULES:**
-- Fix transition awkwardness between agent outputs
-- Resolve any minor contradictions
-- Ensure paragraph flow and structure
-- Maintain active voice from Scene Agent
-- Preserve character authenticity from Character Agent
-- Keep structural pacing from Structure Agent
-
-**FINAL QUALITY TARGETS:**
-Address integration issues while preserving specialist quality:
-- Character name consistency (Character Agent handled this)
-- Balanced pacing (Structure Agent handled this)
-- Concrete conclusions (Scene Agent handled this)
-- Active constructions (Scene Agent handled this)
-- Psychological depth (Character Agent handled this)
-
-**🚨 CRITICAL FIXES FOR COMMON PROBLEMS:**
-
-1. **Незавершённые диалоги**: Ensure ALL dialogue is complete, no placeholders left
-2. **Избыточные описания**: Trim stacked sensory details (max 2 per paragraph)
-3. **Повторяющиеся образы**: Remove duplicate metaphors/phrases
-4. **Размытая картина мира**: Ensure technology/magic consistency throughout
-5. **Затянутая боевая сцена**: Maintain dynamic pacing in action sequences
-6. **Абстрактная концовка**: Make endings concrete and specific
-7. **Неясная мотивация**: Clarify character and organizational motivations
-8. **Скачки темпа**: Smooth pacing transitions between sections
-9. **Перегруженность внутренними монологами**: Balance thought vs action
-10. **Незакрытые сюжетные линии**: Address loose ends within chapter scope
-
-**TARGET LENGTH:** {{target_length}} words
-
-**📊 QUALITY METRICS CHECK (before return):**
-□ Action starts within first 2-3 paragraphs?
-□ Description takes < 20% of text?
-□ Minimum one situation-changing event?
-□ Sensory details are varied (not just visual)?
-□ One dominant sense per scene?
-□ Sentence lengths vary?
-□ Max 2-3 description paragraphs in a row?
-□ All dialogue complete (NO placeholders)?
-□ Repetitive imagery removed?
-□ Technology/magic consistency maintained?
-
-**🚨 CONTEXTUAL INTELLIGENCE CHECK:**
-□ Sensory details match scene intensity (high emotion = minimal senses)?
-□ Emotional reactions appropriate to stimulus (no trauma response to minor events)?
-□ Random thoughts only during shock/dissociation?
-□ NO room descriptions during action scenes?
-□ Information reveals have prior foreshadowing?
-□ Breathing room after intense sections?
-□ NO mechanical rule application without context?
-
-**⚡ QUANTITATIVE TARGETS:**
-- Description paragraphs in a row: max 3
-- Words before first action: max 150
-- Sensory details per paragraph: max 2 (max 1 in high-emotion scenes)
-- Emotional intensity matches event severity
-- Random thoughts: max 1 per chapter, only during dissociation
-
-Return the fully integrated chapter with minimal changes to specialist content.`
+返回评分和分析。`
   });
 }

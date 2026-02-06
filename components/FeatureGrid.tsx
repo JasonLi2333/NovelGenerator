@@ -4,33 +4,33 @@ const FeatureGrid: React.FC = () => {
   const features = [
     {
       icon: '01',
-      title: 'Crafted by specialists',
-      description: 'Three LLM agents. Structure. Character. Scene. Each perfecting their art.'
+      title: '专家联合创作',
+      description: '三个AI专家。结构、角色、场景。各司其职，精益求精。'
     },
     {
       icon: '02',
-      title: 'Precision architecture',
-      description: 'Every element placed with purpose. Dialogue, action, atmosphere flow as one.'
+      title: '精确架构',
+      description: '每个元素都精心布局。对话、动作、氛围浑然一体。'
     },
     {
       icon: '03',
-      title: 'Flawless execution',
-      description: 'Real-time quality checks. Tone consistency. Perfect balance. Zero compromise.'
+      title: '完美执行',
+      description: '实时质量检查。语气一致。完美平衡。零妥协。'
     },
     {
       icon: '04',
-      title: 'Infinite memory',
-      description: 'Every character. Every thread. Every detail. Remembered. Always.'
+      title: '无限记忆',
+      description: '每个角色。每条线索。每个细节。永不遗忘。'
     },
     {
       icon: '05',
-      title: 'Seamless integration',
-      description: 'No rough edges. No jarring transitions. Just smooth, natural storytelling.'
+      title: '无缝整合',
+      description: '没有粗糙边缘。没有突兀过渡。只有流畅自然的叙事。'
     },
     {
       icon: '06',
-      title: 'Refined to perfection',
-      description: 'Layer by layer. Pass by pass. Until every word feels exactly right.'
+      title: '精修至完美',
+      description: '一层又一层。一遍又一遍。直到每个字都恰到好处。'
     }
   ];
 

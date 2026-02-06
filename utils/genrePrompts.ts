@@ -1,5 +1,5 @@
 /**
- * Genre-specific prompts and guidelines for different types of stories
+ * 中文网文类型配置 - 专为中国网络文学定制
  */
 
 export interface GenreConfig {
@@ -12,196 +12,277 @@ export interface GenreConfig {
 }
 
 export const GENRE_CONFIGS: Record<string, GenreConfig> = {
-  fantasy: {
-    name: "Fantasy",
-    description: "Epic fantasy, urban fantasy, magical realism",
+  xuanhuan: {
+    name: "玄幻",
+    description: "东方玄幻、异界大陆、魔法文明",
     focusAreas: [
-      "World-building and magic systems",
-      "Consistent magical rules",
-      "Rich descriptive language",
-      "Epic scope and stakes",
-      "Character growth through trials"
+      "等级体系与修炼系统",
+      "法宝、功法、灵兽设定",
+      "势力划分与地图格局",
+      "战斗场面描写",
+      "主角金手指设计"
     ],
     writingGuidelines: `
-**FANTASY-SPECIFIC GUIDELINES:**
-1. **Magic System Consistency:** Establish clear rules for magic and never break them. Magic should have costs and limitations.
-2. **World-Building Integration:** Weave world details naturally through action and dialogue, not info-dumps.
-3. **Sensory Richness:** Fantasy worlds need vivid sensory details - sights, sounds, smells of this new world.
-4. **Stakes and Scope:** Fantasy often deals with world-ending threats. Make the stakes feel real and personal.
-5. **Character Agency:** Heroes should solve problems through their own choices and growth, not deus ex machina.
-6. **Cultural Depth:** Different races/cultures should have distinct customs, values, and speech patterns.
+**玄幻网文写作指南：**
 
-**AVOID:**
-- Info-dumping about magic systems or history
-- Inconsistent magic rules
-- Generic medieval European settings without unique elements
-- Prophecies that remove character agency
-- Overpowered protagonists without meaningful challenges`,
-    commonPitfalls: "Info-dumps, inconsistent magic, generic settings, chosen one clichés",
-    exampleAuthors: ["Brandon Sanderson", "N.K. Jemisin", "Patrick Rothfuss"]
+1. **等级体系清晰：** 设定明确的实力等级（如：炼气、筑基、金丹...），每个等级差距要体现出压制感
+2. **金手指合理：** 主角的外挂要有限制和代价，不能无限制开挂
+3. **打脸节奏：** 装逼-被轻视-反转打脸，每3-5章设置一个小打脸高潮
+4. **地图扩展：** 循序渐进开启新地图（村-镇-城-国-大陆-位面），每次地图升级主角实力也要提升
+5. **势力设定：** 宗门、家族、帝国等势力要有层次，主角逐步接触更高层
+6. **战斗描写：** 功法招式要有画面感，注重能量运行、招式碰撞的视觉效果
+7. **爽点密集：** 每章至少1个爽点（获得宝物、实力突破、打败强敌、收服美女等）
+
+**避免的坑：**
+- 等级体系混乱，前后矛盾
+- 主角过于无敌，没有挑战性
+- 配角智商下线，专门衬托主角
+- 功法设定空洞，只有名字没有效果描述
+- 地图扩展过快，节奏失控`,
+    commonPitfalls: "等级混乱、无脑爽文、配角工具人、设定崩塌",
+    exampleAuthors: ["天蚕土豆", "辰东", "我吃西红柿", "唐家三少"]
   },
 
-  scifi: {
-    name: "Science Fiction",
-    description: "Hard sci-fi, space opera, cyberpunk, dystopian",
+  xiuxian: {
+    name: "修仙/仙侠",
+    description: "古典仙侠、修真文明、飞升体系",
     focusAreas: [
-      "Technological consistency",
-      "Scientific plausibility",
-      "Social/philosophical implications",
-      "Future world-building",
-      "Human condition in new contexts"
+      "道法与仙术体系",
+      "渡劫与飞升设定",
+      "仙界宗门格局",
+      "因果业力与天道",
+      "法宝炼器丹药"
     ],
     writingGuidelines: `
-**SCI-FI-SPECIFIC GUIDELINES:**
-1. **Tech Consistency:** Establish technology rules early and maintain them. Tech should have logical limitations.
-2. **Show, Don't Explain:** Demonstrate how technology works through use, not technical manuals.
-3. **Human Element:** Focus on how technology affects people, relationships, society - not just the tech itself.
-4. **Plausibility:** Even in far-future settings, maintain internal logic and scientific grounding.
-5. **Social Implications:** Explore how technological changes affect culture, politics, ethics.
-6. **Avoid Technobabble:** Use technical terms sparingly and only when they serve the story.
+**修仙仙侠写作指南：**
 
-**AVOID:**
-- Long technical explanations that stop the story
-- Technology that solves every problem (deus ex machina)
-- Ignoring the social impact of technological changes
-- Inconsistent tech capabilities
-- Characters who are just mouthpieces for ideas`,
-    commonPitfalls: "Technobabble, inconsistent tech, ignoring human element, info-dumps",
-    exampleAuthors: ["Ursula K. Le Guin", "Ted Chiang", "Ann Leckie"]
+1. **修真境界：** 炼气-筑基-金丹-元婴-化神-渡劫-大乘-飞升，每个境界都有明确门槛
+2. **道心与心境：** 强调修道不只是实力提升，更要修心，心魔劫、天道考验等
+3. **寿元限制：** 每个境界有寿命上限，营造紧迫感（如金丹期500年寿命）
+4. **资源争夺：** 灵石、丹药、法宝、洞府等修仙资源要有限，产生矛盾冲突
+5. **宗门设定：** 正道邪道、剑修体修、散修与宗门弟子的差异
+6. **天劫与飞升：** 突破大境界要渡劫，失败可能身死道消，飞升要有仪式感
+7. **因果业力：** 强调因果循环，杀戮过多会有业力反噬
+8. **古风韵味：** 对话、描写要有古典韵味，但不能太文言生涩
+
+**避免的坑：**
+- 修仙变成纯打怪升级，失去仙侠韵味
+- 忽视寿元限制，主角永生不老
+- 宗门只是背景板，没有实际作用
+- 法宝丹药通货膨胀，后期价值感缺失
+- 对话过于现代化，缺少仙侠氛围`,
+    commonPitfalls: "境界水分、无限寿命、资源通胀、现代对话",
+    exampleAuthors: ["耳根", "忘语", "百炼成仙", "凡人流祖师"]
   },
 
-  thriller: {
-    name: "Thriller/Mystery",
-    description: "Suspense, mystery, crime, psychological thriller",
+  dushi: {
+    name: "都市",
+    description: "都市重生、现代异能、商战豪门",
     focusAreas: [
-      "Pacing and tension",
-      "Clues and red herrings",
-      "Suspense building",
-      "Plot twists",
-      "Character psychology"
+      "重生逆袭情节",
+      "商业战争描写",
+      "都市异能设定",
+      "情感纠葛处理",
+      "现实社会背景"
     ],
     writingGuidelines: `
-**THRILLER-SPECIFIC GUIDELINES:**
-1. **Constant Tension:** Every scene should increase stakes or reveal new complications. No filler.
-2. **Fair Play:** Plant clues that readers can theoretically solve the mystery, but make them subtle.
-3. **Pacing Control:** Alternate between high-tension scenes and brief breathing room. Build to climax.
-4. **Ticking Clock:** Use time pressure to increase urgency. Deadlines create tension.
-5. **Unreliable Information:** Characters (including POV) can be wrong or lie. Keep readers guessing.
-6. **Payoff Setup:** Every twist should be surprising yet inevitable in hindsight.
+**都市网文写作指南：**
 
-**AVOID:**
-- Slow starts (hook readers immediately)
-- Convenient coincidences that solve problems
-- Twists that come from nowhere (no setup)
-- Explaining the mystery too early
-- Protagonists who are passive observers`,
-    commonPitfalls: "Slow pacing, unearned twists, passive protagonists, convenient solutions",
-    exampleAuthors: ["Gillian Flynn", "Tana French", "Lee Child"]
+1. **重生优势：** 利用前世记忆（股市、彩票、商机、关系网）合理逆袭
+2. **系统金手指：** 都市常见系统流，系统任务要有挑战性和奖励机制
+3. **商战描写：** 公司运营、资本博弈、商业谈判要有真实感和策略性
+4. **打脸节奏：** 前女友后悔、势利亲戚打脸、商业对手碾压
+5. **感情线：** 多女主或专一都可以，但感情要自然发展，不要工具人
+6. **装逼有度：** 低调装逼更有层次感，避免无脑炫富
+7. **现实细节：** 涉及房产、车、品牌等要符合时代背景，不能穿帮
+8. **能力限制：** 即使重生或有系统，也要有成长过程，不能瞬间无敌
+
+**避免的坑：**
+- 重生后知识bug（说出还未发生的事件）
+- 无脑打脸，配角全是小丑
+- 商战描写过于简单粗暴
+- 女主角色扁平化，只是花瓶
+- 忽视法律和社会规则`,
+    commonPitfalls: "时间线bug、无脑打脸、商战幼稚、多女无情",
+    exampleAuthors: ["鹅是老五", "更俗", "老鹰吃小鸡", "齐佩甲"]
   },
 
-  romance: {
-    name: "Romance",
-    description: "Contemporary romance, historical romance, romantic comedy",
+  yanqing: {
+    name: "言情",
+    description: "现代言情、古代言情、甜宠虐恋",
     focusAreas: [
-      "Emotional depth",
-      "Character chemistry",
-      "Relationship development",
-      "Internal conflict",
-      "Satisfying resolution"
+      "情感细腻描写",
+      "人物性格塑造",
+      "误会与和解",
+      "甜宠虐恋节奏",
+      "情节波折设计"
     ],
     writingGuidelines: `
-**ROMANCE-SPECIFIC GUIDELINES:**
-1. **Emotional Honesty:** Show vulnerability, fear, desire authentically. Romance lives in emotional truth.
-2. **Chemistry Through Action:** Show attraction through body language, dialogue subtext, and reactions.
-3. **Internal Conflict:** The biggest obstacles should be internal (fear, past trauma, beliefs) not just external.
-4. **Earned Intimacy:** Build emotional connection before physical. Make readers root for the couple.
-5. **Distinct Voices:** Each love interest should have a unique personality, goals, and way of speaking.
-6. **Satisfying Arc:** Both characters should grow and change through the relationship.
+**言情网文写作指南：**
 
-**AVOID:**
-- Insta-love without foundation
-- Miscommunication as the only conflict
-- Toxic behaviors portrayed as romantic
-- One character "fixing" the other
-- Telling us they're in love instead of showing it`,
-    commonPitfalls: "Insta-love, miscommunication plots, toxic dynamics, telling not showing",
-    exampleAuthors: ["Talia Hibbert", "Courtney Milan", "Casey McQuiston"]
+1. **男女主人设：** 人物性格要鲜明立体，不能千篇一律（霸总、小白花）
+2. **情感进展：** 从陌生到熟悉再到相爱，每个阶段都要有细腻描写
+3. **误会设置：** 误会要合理，不能为虐而虐，和解也要水到渠成
+4. **甜宠节奏：** 日常互动要有甜蜜感，小细节见真情
+5. **冲突设计：** 感情冲突要来自性格差异、立场不同，而非狗血误会
+6. **配角丰满：** 闺蜜、情敌、家人都要有血有肉，不能脸谱化
+7. **场景氛围：** 约会、争吵、告白等场景要有代入感
+8. **心理描写：** 内心活动要细腻真实，展现情感变化
+
+**避免的坑：**
+- 男主过于霸道，变成精神控制
+- 女主圣母或无脑，缺乏主见
+- 误会来自不沟通的低级错误
+- 配角智商下线，专门拆散主角
+- 虐恋没有情感基础，为虐而虐`,
+    commonPitfalls: "霸总模板、圣母女主、狗血误会、工具人配角",
+    exampleAuthors: ["顾漫", "匪我思存", "桐华", "寐语者"]
   },
 
-  horror: {
-    name: "Horror",
-    description: "Psychological horror, supernatural horror, gothic",
+  chuanyue: {
+    name: "穿越/重生",
+    description: "穿越异世、历史穿越、重生复仇",
     focusAreas: [
-      "Atmosphere and dread",
-      "Psychological tension",
-      "The unknown/unseen",
-      "Character vulnerability",
-      "Visceral reactions"
+      "穿越理由与机制",
+      "现代知识运用",
+      "改变历史走向",
+      "原身记忆处理",
+      "蝴蝶效应把控"
     ],
     writingGuidelines: `
-**HORROR-SPECIFIC GUIDELINES:**
-1. **Atmosphere First:** Build dread through setting, sensory details, and mood before showing the threat.
-2. **Less is More:** The unseen/unknown is scarier than explicit gore. Suggest rather than show.
-3. **Psychological Depth:** Horror works best when it taps into primal fears and psychological vulnerability.
-4. **Pacing Variation:** Alternate between quiet dread and shock moments. Constant intensity numbs readers.
-5. **Character Investment:** Readers must care about characters to fear for them. Build empathy first.
-6. **Sensory Horror:** Use all senses - sounds, smells, textures can be more disturbing than sights.
+**穿越重生写作指南：**
 
-**AVOID:**
-- Relying only on gore/shock value
-- Showing the monster too early or too much
-- Characters making stupid decisions just to advance plot
-- Explaining away the horror (mystery is scarier)
-- Constant jump scares (they lose impact)`,
-    commonPitfalls: "Over-explaining, showing too much, stupid character decisions, constant shock",
-    exampleAuthors: ["Shirley Jackson", "Stephen King", "Carmen Maria Machado"]
+1. **穿越设定：** 明确穿越原因（车祸、系统、意外）和穿越规则
+2. **知识优势：** 合理利用现代知识（医学、科技、历史预知），不能太离谱
+3. **身份融合：** 处理好原身记忆和穿越者意识的关系
+4. **改变历史：** 如果是历史穿越，要考虑蝴蝶效应，不能随意改历史还无后果
+5. **重生复仇：** 重生文要有明确的复仇或逆袭目标，记忆要用得巧妙
+6. **人物关系：** 前世今生的关系变化要处理好
+7. **世界观融合：** 现代思想和古代背景要有冲突和融合
+8. **节奏把控：** 不要一穿越就无敌，要有成长线
+
+**避免的坑：**
+- 穿越后立刻适应，没有文化冲突
+- 现代知识滥用，变成百科全书
+- 改变历史无后果，蝴蝶效应消失
+- 重生后智商碾压所有人
+- 配角行为模式不变，成为经验包`,
+    commonPitfalls: "秒适应、知识泛滥、历史随意改、降智配角",
+    exampleAuthors: ["月关", "梦溪石", "天使奥斯卡", "豆芽炒肉丝"]
   },
 
-  literary: {
-    name: "Literary Fiction",
-    description: "Character-driven, literary, contemporary fiction",
+  lishi: {
+    name: "历史",
+    description: "架空历史、历史军事、朝堂争斗",
     focusAreas: [
-      "Prose quality",
-      "Character depth",
-      "Thematic exploration",
-      "Subtle storytelling",
-      "Emotional resonance"
+      "历史背景考据",
+      "战争策略描写",
+      "朝堂权谋博弈",
+      "时代氛围营造",
+      "历史人物塑造"
     ],
     writingGuidelines: `
-**LITERARY-SPECIFIC GUIDELINES:**
-1. **Prose as Art:** Every sentence should be crafted. Word choice, rhythm, and sound matter.
-2. **Character Over Plot:** Focus on internal journeys, psychological depth, and character revelation.
-3. **Subtlety and Nuance:** Trust readers to understand implications. Leave space for interpretation.
-4. **Thematic Depth:** Explore complex themes through character and situation, not explicit statements.
-5. **Emotional Truth:** Prioritize authentic emotional experiences over dramatic events.
-6. **Ambiguity:** Not everything needs resolution. Life is messy; fiction can be too.
+**历史网文写作指南：**
 
-**AVOID:**
-- Plot-driven action at expense of character
-- Explaining themes explicitly
-- Neat, tidy resolutions to complex problems
-- Melodrama or sentimentality
-- Prioritizing "what happens" over "what it means"`,
-    commonPitfalls: "Over-explaining, melodrama, neat resolutions, prioritizing plot over character",
-    exampleAuthors: ["Kazuo Ishiguro", "Celeste Ng", "Ocean Vuong"]
+1. **历史基础：** 架空也要有历史感，朝代制度、科技水平要符合时代
+2. **战争描写：** 战术、兵种、后勤、地形都要考虑，不能无脑冲锋
+3. **权谋斗争：** 朝堂争斗要有策略，不能只靠主角光环
+4. **时代局限：** 即使主角有现代知识，也要考虑时代技术和观念限制
+5. **历史人物：** 如果涉及真实历史人物，性格要符合史料，不能OOC
+6. **经济基础：** 发展经济要符合生产力水平，不能随便工业革命
+7. **文化氛围：** 对话、行为要符合古代礼仪和社会规范
+8. **历史进程：** 推动历史要有逻辑，不能一己之力改天换地
+
+**避免的坑：**
+- 用现代思维套古代，违和感强
+- 科技树乱点，瞬间跨越几百年
+- 战争儿戏化，战术不合理
+- 古人全是白痴，只等主角拯救
+- 忽视经济规律，资源凭空产生`,
+    commonPitfalls: "现代思维、科技跨越、战争儿戏、古人降智",
+    exampleAuthors: ["月关", "酒徒", "随波逐流", "赵子曰"]
+  },
+
+  kehuan: {
+    name: "科幻",
+    description: "星际争霸、末世求生、机甲战斗",
+    focusAreas: [
+      "科技体系设定",
+      "星际文明格局",
+      "末世生存法则",
+      "机甲战斗描写",
+      "人工智能伦理"
+    ],
+    writingGuidelines: `
+**科幻网文写作指南：**
+
+1. **科技逻辑：** 科技设定要有内在逻辑，不能魔法化科技
+2. **星际格局：** 宇宙文明等级、星际势力要清晰
+3. **末世设定：** 丧尸、变异、天灾等末世要有完整世界观
+4. **机甲系统：** 机甲等级、能源、武器要成体系
+5. **生存压力：** 科幻背景下的资源争夺和生存困境
+6. **AI伦理：** 如涉及AI，要探讨意识、伦理等深层问题
+7. **战斗场面：** 太空战、机甲战要有科技感和视觉冲击
+8. **人文关怀：** 不能只有科技，也要有人性探讨
+
+**避免的坑：**
+- 科技术语堆砌，变成设定集
+- 星际旅行无视物理规律
+- 末世无限物资，失去压迫感
+- 机甲战斗套用玄幻打斗
+- 忽视科技发展的社会影响`,
+    commonPitfalls: "伪科幻、物理bug、资源无限、魔法科技",
+    exampleAuthors: ["远瞳", "骷髅精灵", "烟雨江南", "九指仙尊"]
+  },
+
+  xuanyi: {
+    name: "悬疑",
+    description: "灵异悬疑、推理探案、惊悚恐怖",
+    focusAreas: [
+      "悬念设置技巧",
+      "线索埋设与揭示",
+      "氛围营造手法",
+      "逻辑推理链条",
+      "反转设计"
+    ],
+    writingGuidelines: `
+**悬疑网文写作指南：**
+
+1. **悬念设置：** 开篇抛出悬念钩子，每章结尾留悬念
+2. **线索布局：** 前期埋伏笔，中期给线索，后期揭秘，要公平
+3. **氛围渲染：** 通过环境、心理描写营造紧张诡异氛围
+4. **逻辑自洽：** 推理过程要符合逻辑，不能强行反转
+5. **多重真相：** 设置假象和真相，层层剥离
+6. **恐怖尺度：** 心理恐怖比血腥恐怖更持久有效
+7. **节奏控制：** 紧张与缓和交替，不能一直高强度
+8. **真相合理：** 最终真相要让读者恍然大悟，不能烂尾
+
+**避免的坑：**
+- 悬念为悬念，没有合理解释
+- 关键线索藏太深，读者无法参与推理
+- 反转过多，失去可信度
+- 依赖巧合和意外推动情节
+- 结局草草收场，真相不满意`,
+    commonPitfalls: "强行反转、线索太隐、巧合推动、烂尾收场",
+    exampleAuthors: ["蔡骏", "周浩晖", "秦明", "那多"]
   }
 };
 
 export function getGenreGuidelines(genre: string): string {
   const config = GENRE_CONFIGS[genre.toLowerCase()];
   if (!config) {
-    return ""; // Return empty string for unknown genres, use default guidelines
+    return ""; // 未知类型返回空，使用默认指南
   }
 
   return `
-**GENRE: ${config.name.toUpperCase()}**
+**类型：${config.name}**
 
 ${config.writingGuidelines}
 
-**FOCUS AREAS FOR THIS GENRE:**
+**该类型核心要素：**
 ${config.focusAreas.map(area => `- ${area}`).join('\n')}
 
-**COMMON PITFALLS TO AVOID:**
+**常见写作误区：**
 ${config.commonPitfalls}
 `;
 }
@@ -212,5 +293,5 @@ export function getGenreList(): string[] {
 
 export function getGenreDescription(genre: string): string {
   const config = GENRE_CONFIGS[genre.toLowerCase()];
-  return config ? config.description : "General fiction";
+  return config ? config.description : "通用类型";
 }

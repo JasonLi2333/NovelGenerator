@@ -81,27 +81,27 @@ const App: React.FC = () => {
       <header className="w-full max-w-4xl mb-8 text-center">
         <div className="flex items-center justify-center gap-3 mb-2">
           <h1 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-cyan-300 to-teal-400 py-2">
-            NovelGenerator
+            网文生成器
           </h1>
           <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-sky-500 to-cyan-500 text-white shadow-lg animate-pulse">
             v4.1
           </span>
         </div>
         <p className="text-slate-400 mt-2 text-sm md:text-base">
-          Become an author. Before your coffee gets cold. <br />Turn ideas into books. With one prompt.
+          一杯茶的功夫，成为网文大神。<br />一句话设定，生成百万字长文。
         </p>
       </header>
 
       <main className="w-full max-w-4xl bg-slate-800 shadow-2xl rounded-lg p-6 md:p-8 animate-fade-in">
         {error && (
           <div className="mb-4 p-4 bg-red-700 border border-red-500 text-white rounded-md">
-            <p className="font-semibold">Error:</p>
+            <p className="font-semibold">错误：</p>
             <p>{error}</p>
             <button
               onClick={handleReset}
               className="mt-2 px-3 py-1 bg-red-500 hover:bg-red-400 rounded text-sm"
             >
-              Try Again
+              重试
             </button>
           </div>
         )}
@@ -123,16 +123,16 @@ const App: React.FC = () => {
             />
             <div className="mt-12 border-t border-slate-700 pt-6">
               <p className="text-[10px] text-slate-500 mb-4 text-left leading-relaxed">
-                * Time to create: Several minutes to several hours, depending on length. Each chapter receives multiple AI passes for professional quality. Patience creates perfection.
+                * 创作时间：根据长度，从几分钟到几小时不等。每章都经过多轮AI精修，确保专业品质。耐心成就完美。
               </p>
-              <p className="text-[10px] text-slate-500 mb-2 text-left">** Technical Process:</p>
+              <p className="text-[10px] text-slate-500 mb-2 text-left">** 技术流程：</p>
               <div className="text-[10px] text-slate-500 leading-relaxed text-left space-y-1">
-                <p>Specialist Coordination: Three LLM agents (Structure, Character, Scene) work sequentially, each receiving full context and previous outputs.</p>
-                <p>Slot-Based Architecture: Structure agent creates prose framework with embedded slots, specialists fill them with dialogue, action, descriptions.</p>
-                <p>Real-Time Validation: Automatic checks for repetition patterns, tone consistency, content balance during generation.</p>
-                <p>Persistent Context: Story Context Database tracks character states, plot threads, world facts across all chapters for coherence.</p>
-                <p>Synthesis Integration: Advanced merging engine resolves conflicts, generates transitions, performs slot replacement with fallback handling.</p>
-                <p>Multi-Pass Refinement: Light polish → repetition fixes → continuity checks → professional polish for publication-ready quality.</p>
+                <p>专家协作：三个AI专家（结构、角色、场景）顺序工作，每个都接收完整上下文和前序输出。</p>
+                <p>槽位架构：结构代理创建带嵌入槽位的文本框架，各专家填充对话、动作、描写。</p>
+                <p>实时验证：生成过程中自动检查重复模式、语气一致性、内容平衡。</p>
+                <p>持久上下文：故事上下文数据库追踪所有章节的角色状态、情节线索、世界事实，确保连贯性。</p>
+                <p>综合整合：高级合并引擎解决冲突，生成过渡，执行槽位替换和后备处理。</p>
+                <p>多轮精修：轻度润色 → 重复修复 → 连贯性检查 → 专业级打磨，达到出版品质。</p>
               </div>
             </div>
           </>
@@ -145,14 +145,14 @@ const App: React.FC = () => {
         })() && (
           <div className="text-center py-12">
             <LoadingSpinner />
-            <p className="mt-4 text-sky-300 text-lg">Generating story outline...</p>
-            <p className="mt-2 text-slate-400 text-sm">This may take 10-30 seconds</p>
+            <p className="mt-4 text-sky-300 text-lg">正在生成故事大纲...</p>
+            <p className="mt-2 text-slate-400 text-sm">这可能需要10-30秒</p>
           </div>
         )}
 
         {currentStep === GenerationStep.WaitingForOutlineApproval && !isLoading && (
             <ApprovalView
-              title="Review & Edit Story Outline"
+              title="审阅并编辑故事大纲"
               content={currentStoryOutline}
               onContentChange={setCurrentStoryOutline}
               onApprove={handleContinue}
@@ -168,9 +168,9 @@ const App: React.FC = () => {
             
             {isResumable && !isLoading && (
               <div className="my-6 p-4 border border-sky-700 bg-sky-900/30 rounded-md">
-                  <p className="text-lg text-sky-300 mb-4">You have a book in progress.</p>
+                  <p className="text-lg text-sky-300 mb-4">您有一部作品正在创作中。</p>
                   <Button onClick={handleStartGeneration} variant="primary">
-                      Resume Generation
+                      继续创作
                   </Button>
               </div>
             )}
@@ -191,29 +191,29 @@ const App: React.FC = () => {
             
             {currentStep === GenerationStep.GeneratingChapters && generatedChapters.length > 0 && currentChapterProcessing > 0 ? (
                 <StreamingContentView
-                    title={`Writing Chapter ${currentChapterProcessing}: ${generatedChapters[currentChapterProcessing - 1]?.title || '...'}`}
+                    title={`正在创作第 ${currentChapterProcessing} 章：${generatedChapters[currentChapterProcessing - 1]?.title || '...'}`}
                     content={generatedChapters[currentChapterProcessing - 1]?.content || ''}
                 />
             ) : (
               <>
                 {currentStoryOutline && (
                   <div className="mt-4 p-4 bg-slate-700 rounded-md max-h-60 overflow-y-auto text-left">
-                    <h3 className="font-semibold mb-2 text-sky-400">Story Outline (In Progress):</h3>
+                    <h3 className="font-semibold mb-2 text-sky-400">故事大纲（进行中）：</h3>
                     <pre className="whitespace-pre-wrap text-sm text-slate-300">{currentStoryOutline.slice(0,1000)}...</pre>
                   </div>
                 )}
                 {currentChapterPlan && (
                   <div className="mt-4 p-4 bg-slate-700 rounded-md max-h-60 overflow-y-auto text-left">
-                    <h3 className="font-semibold mb-2 text-sky-400">Chapter Plan (In Progress):</h3>
+                    <h3 className="font-semibold mb-2 text-sky-400">章节计划（进行中）：</h3>
                     <pre className="whitespace-pre-wrap text-sm text-slate-300">{currentChapterPlan.slice(0,1000)}...</pre>
                   </div>
                 )}
                 {generatedChapters.length > 0 && (
                   <div className="mt-4 p-4 bg-slate-700 rounded-md max-h-60 overflow-y-auto text-left">
-                    <h3 className="font-semibold mb-2 text-sky-400">Generated Chapters Progress:</h3>
+                    <h3 className="font-semibold mb-2 text-sky-400">章节生成进度：</h3>
                     <ul className="list-disc list-inside text-sm text-slate-300">
                       {generatedChapters.map((ch, idx) => (
-                        <li key={idx}>Chapter {idx + 1}: {ch.title || `Generating...`} ({(ch.content?.length || 0) > 0 ? 'Content generated' : 'Pending'})</li>
+                        <li key={idx}>第 {idx + 1} 章：{ch.title || `生成中...`} ({(ch.content?.length || 0) > 0 ? '已生成' : '待处理'})</li>
                       ))}
                     </ul>
                   </div>

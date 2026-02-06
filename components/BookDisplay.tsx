@@ -55,7 +55,7 @@ const BookDisplay: React.FC<BookDisplayProps> = ({ bookContent, metadataJson, on
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-3xl font-semibold text-sky-400 mb-4">Your Book is Ready!</h2>
+        <h2 className="text-3xl font-semibold text-sky-400 mb-4">您的作品已完成！</h2>
         
         {/* Book Statistics */}
         <BookStatistics bookContent={bookContent} metadata={metadata} />
@@ -67,21 +67,21 @@ const BookDisplay: React.FC<BookDisplayProps> = ({ bookContent, metadataJson, on
           className={`py-2 px-4 text-sm font-medium transition-colors duration-150
             ${activeTab === 'book' ? 'border-b-2 border-sky-500 text-sky-400' : 'text-slate-400 hover:text-sky-300'}`}
         >
-          Book Content
+          作品内容
         </button>
         <button
           onClick={() => setActiveTab('timeline')}
           className={`py-2 px-4 text-sm font-medium transition-colors duration-150
             ${activeTab === 'timeline' ? 'border-b-2 border-sky-500 text-sky-400' : 'text-slate-400 hover:text-sky-300'}`}
         >
-          Timeline
+          时间线
         </button>
         <button
           onClick={() => setActiveTab('metadata')}
           className={`py-2 px-4 text-sm font-medium transition-colors duration-150
             ${activeTab === 'metadata' ? 'border-b-2 border-sky-500 text-sky-400' : 'text-slate-400 hover:text-sky-300'}`}
         >
-          Metadata (JSON)
+          元数据 (JSON)
         </button>
       </div>
 
@@ -93,14 +93,14 @@ const BookDisplay: React.FC<BookDisplayProps> = ({ bookContent, metadataJson, on
               variant="secondary"
               size="sm"
             >
-              {copiedStates['book'] ? 'Copied!' : 'Copy Markdown'}
+              {copiedStates['book'] ? '已复制！' : '复制Markdown'}
             </Button>
             <Button 
               onClick={() => downloadFile(bookContent, `${(metadata?.title || 'generated_book').replace(/\s+/g, '_')}.md`, 'text/markdown;charset=utf-8')}
               variant="secondary"
               size="sm"
             >
-              Download .md
+              下载.md
             </Button>
             <Button 
               onClick={() => {
@@ -110,7 +110,7 @@ const BookDisplay: React.FC<BookDisplayProps> = ({ bookContent, metadataJson, on
               variant="secondary"
               size="sm"
             >
-              Export Epub
+              导出Epub
             </Button>
             <Button 
               onClick={() => {
@@ -120,7 +120,7 @@ const BookDisplay: React.FC<BookDisplayProps> = ({ bookContent, metadataJson, on
               variant="secondary"
               size="sm"
             >
-              Save PDF
+              保存PDF
             </Button>
           </div>
           <pre className="whitespace-pre-wrap text-sm text-slate-200 bg-slate-900/50 p-4 rounded-md max-h-[60vh] overflow-y-auto">
@@ -131,11 +131,11 @@ const BookDisplay: React.FC<BookDisplayProps> = ({ bookContent, metadataJson, on
 
       {activeTab === 'timeline' && (
         <div className="p-4 bg-slate-700 rounded-md shadow max-h-[60vh] overflow-y-auto">
-          <h3 className="text-2xl font-semibold text-sky-400 mb-6 text-center">Story Timeline</h3>
+          <h3 className="text-2xl font-semibold text-sky-400 mb-6 text-center">Story 时间线</h3>
           {timelineData && chapterSummaries ? (
               <div className="relative pl-8 border-l-2 border-slate-600">
-                  {Object.entries(timelineData).sort(([a], [b]) => parseInt(a) - parseInt(b)).map(([chapterNum, rawTimelineEntry]) => {
-                      const timelineEntry = rawTimelineEntry as any; // Cast to access properties
+                  {Object.entries(timelineData).sort(([a], [b]) => parseInt(a) - parseInt(b)).map(([chapterNum, raw时间线Entry]) => {
+                      const timelineEntry = raw时间线Entry as any; // Cast to access properties
                       const chapterInfo = chapterSummaries[chapterNum];
 
                       return (
@@ -154,7 +154,7 @@ const BookDisplay: React.FC<BookDisplayProps> = ({ bookContent, metadataJson, on
                   })}
               </div>
           ) : (
-              <p className="text-center text-slate-400">Timeline data is not available in the metadata.</p>
+              <p className="text-center text-slate-400">时间线 data is not available in the metadata.</p>
           )}
         </div>
       )}
@@ -167,14 +167,14 @@ const BookDisplay: React.FC<BookDisplayProps> = ({ bookContent, metadataJson, on
               variant="secondary"
               size="sm"
             >
-              {copiedStates['metadata'] ? 'Copied!' : 'Copy JSON'}
+              {copiedStates['metadata'] ? '已复制！' : '复制JSON'}
             </Button>
              <Button 
               onClick={() => downloadFile(metadataJson, `${(metadata?.title || 'generated_book').replace(/\s+/g, '_')}_metadata.json`, 'application/json;charset=utf-8')}
               variant="secondary"
               size="sm"
             >
-              Download .json
+              下载.json
             </Button>
           </div>
           <pre className="whitespace-pre-wrap text-sm text-slate-200 bg-slate-900/50 p-4 rounded-md max-h-[60vh] overflow-y-auto">
@@ -185,7 +185,7 @@ const BookDisplay: React.FC<BookDisplayProps> = ({ bookContent, metadataJson, on
       
       <div className="text-center mt-8">
         <Button onClick={onReset} variant="danger">
-          Start New Book
+          开始新作品
         </Button>
       </div>
 

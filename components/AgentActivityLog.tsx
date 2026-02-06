@@ -55,7 +55,7 @@ const AgentActivityLog: React.FC<AgentActivityLogProps> = ({ logs }) => {
         fontSize: '18px',
         fontWeight: 'bold'
       }}>
-        Agent Activity Log
+        AI代理活动日志
       </h3>
 
       {Object.entries(logsByChapter).map(([chapterNum, chapterLogs]) => (
@@ -126,7 +126,7 @@ const AgentActivityLog: React.FC<AgentActivityLogProps> = ({ logs }) => {
                         color: '#9ca3af', 
                         fontSize: '12px'
                       }}>
-                        Details
+                        详情
                       </summary>
                       <pre style={{
                         marginTop: '8px',
@@ -158,7 +158,7 @@ const AgentActivityLog: React.FC<AgentActivityLogProps> = ({ logs }) => {
           color: '#9ca3af',
           textAlign: 'center'
         }}>
-          Total: {logs.length} log entries
+          总计： {logs.length} 条日志
         </div>
       )}
     </div>

@@ -10,15 +10,15 @@ const SaveStatusIndicator: React.FC<SaveStatusIndicatorProps> = ({ generatedChap
   const getStageLabel = (stage?: ChapterGenerationStage): string => {
     switch (stage) {
       case ChapterGenerationStage.NotStarted:
-        return 'Not Started';
+        return '未开始';
       case ChapterGenerationStage.FirstDraft:
-        return 'First Draft';
+        return '初稿';
       case ChapterGenerationStage.LightPolish:
-        return 'Polished';
+        return '润色';
       case ChapterGenerationStage.ConsistencyCheck:
-        return 'Checked';
-      case ChapterGenerationStage.Complete:
-        return 'Complete';
+        return '检查';
+      case ChapterGenerationStage.完成:
+        return '完成';
       default:
         return 'In Progress';
     }
@@ -30,7 +30,7 @@ const SaveStatusIndicator: React.FC<SaveStatusIndicatorProps> = ({ generatedChap
     const now = new Date();
     const diffSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
     
-    if (diffSeconds < 10) return 'Just now';
+    if (diffSeconds < 10) return '刚刚';
     if (diffSeconds < 60) return `${diffSeconds}s ago`;
     if (diffSeconds < 3600) return `${Math.floor(diffSeconds / 60)}m ago`;
     if (diffSeconds < 86400) return `${Math.floor(diffSeconds / 3600)}h ago`;
@@ -38,11 +38,11 @@ const SaveStatusIndicator: React.FC<SaveStatusIndicatorProps> = ({ generatedChap
   };
 
   const hasChaptersInProgress = generatedChapters.some(ch => 
-    ch.generationStage && ch.generationStage !== ChapterGenerationStage.Complete
+    ch.generationStage && ch.generationStage !== ChapterGenerationStage.完成
   );
 
   const completedCount = generatedChapters.filter(ch => 
-    ch.generationStage === ChapterGenerationStage.Complete
+    ch.generationStage === ChapterGenerationStage.完成
   ).length;
 
   return (
@@ -51,7 +51,7 @@ const SaveStatusIndicator: React.FC<SaveStatusIndicatorProps> = ({ generatedChap
         <div className="flex items-center gap-2">
           <div className={`w-2 h-2 rounded-full ${hasChaptersInProgress ? 'bg-green-400 animate-pulse' : 'bg-slate-500'}`}></div>
           <span className="text-sm text-slate-300 font-medium">
-            {hasChaptersInProgress ? 'Generating & Auto-saving...' : 'All changes saved'}
+            {hasChaptersInProgress ? '生成并自动保存中...' : '所有更改已保存'}
           </span>
         </div>
         {savedAt && (
@@ -86,13 +86,13 @@ const SaveStatusIndicator: React.FC<SaveStatusIndicatorProps> = ({ generatedChap
       {completedCount > 0 && (
         <div className="mt-2 pt-2 border-t border-slate-600">
           <span className="text-xs text-green-400">
-            ✅ {completedCount} / {generatedChapters.length} chapters completed
+            ✅ {completedCount} / {generatedChapters.length} 章节已完成
           </span>
         </div>
       )}
 
       <div className="mt-2 pt-2 border-t border-slate-600 text-[10px] text-slate-500">
-        Progress automatically saved to browser. Safe to refresh if needed.
+        进度已自动保存到浏览器. Safe to refresh if needed.
       </div>
     </div>
   );

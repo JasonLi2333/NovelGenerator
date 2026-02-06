@@ -42,14 +42,14 @@ function downloadBlob(blob: Blob, filename: string): void {
 }
 
 /**
- * Generate filename from book title
+ * Generate filename from book title (支持中文)
  */
 export function sanitizeFilename(title: string): string {
+  // Support Chinese characters and alphanumeric
   return title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .substring(0, 50) || 'book';
+    .replace(/[<>:"/\\|?*\x00-\x1f]/g, '') // Remove invalid filename characters
+    .replace(/\s+/g, '_') // Replace spaces with underscores
+    .substring(0, 100) || '作品'; // Increased length for Chinese, default to "作品"
 }
 
 /**
@@ -57,7 +57,7 @@ export function sanitizeFilename(title: string): string {
  */
 export function extractBookTitle(content: string): string {
   const match = content.match(/^#\s+(.+)$/m);
-  return match ? match[1].trim() : 'Untitled Book';
+  return match ? match[1].trim() : '未命名作品';
 }
 
 /**

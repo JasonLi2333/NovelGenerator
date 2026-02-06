@@ -7,15 +7,12 @@ interface BookStatisticsProps {
 
 const BookStatistics: React.FC<BookStatisticsProps> = ({ bookContent, metadata }) => {
   const stats = useMemo(() => {
-    // Calculate word count
-    const words = bookContent.trim().split(/\s+/).filter(w => w.length > 0);
-    const totalWords = words.length;
+    // Calculate character count (Chinese uses characters, not words)
+    const 字符 = bookContent.replace(/\s/g, '').length;
+    const totalWords = 字符; // For Chinese, use character count as word count
     
-    // Calculate character count (without spaces)
-    const characters = bookContent.replace(/\s/g, '').length;
-    
-    // Calculate reading time (average 200 words per minute)
-    const readingTimeMinutes = Math.ceil(totalWords / 200);
+    // Calculate reading time (average 500 characters per minute for Chinese)
+    const readingTimeMinutes = Math.ceil(字符 / 500);
     
     // Get chapter count
     const chapterMatches = bookContent.match(/^##\s+Chapter\s+\d+/gm);
@@ -42,7 +39,7 @@ const BookStatistics: React.FC<BookStatisticsProps> = ({ bookContent, metadata }
     
     return {
       totalWords,
-      characters,
+      字符,
       readingTimeMinutes,
       chapterCount,
       avgWordsPerChapter,
@@ -63,32 +60,32 @@ const BookStatistics: React.FC<BookStatisticsProps> = ({ bookContent, metadata }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      {/* Total Words */}
+      {/* 总字数 */}
       <div className="bg-gradient-to-br from-slate-700 to-slate-800 border border-sky-500/30 p-4 rounded-lg shadow-lg hover:border-sky-500/50 transition-colors">
-        <div className="text-sky-300 text-sm font-medium mb-1">Total Words</div>
+        <div className="text-sky-300 text-sm font-medium mb-1">总字数</div>
         <div className="text-white text-3xl font-bold">{stats.totalWords.toLocaleString()}</div>
-        <div className="text-slate-400 text-xs mt-1">{stats.characters.toLocaleString()} characters</div>
+        <div className="text-slate-400 text-xs mt-1">{stats.字符.toLocaleString()} 字符</div>
       </div>
 
-      {/* Reading Time */}
+      {/* 阅读时长 */}
       <div className="bg-gradient-to-br from-slate-700 to-slate-800 border border-sky-500/30 p-4 rounded-lg shadow-lg hover:border-sky-500/50 transition-colors">
-        <div className="text-sky-300 text-sm font-medium mb-1">Reading Time</div>
+        <div className="text-sky-300 text-sm font-medium mb-1">阅读时长</div>
         <div className="text-white text-3xl font-bold">{formatReadingTime(stats.readingTimeMinutes)}</div>
-        <div className="text-slate-400 text-xs mt-1">~200 words/min</div>
+        <div className="text-slate-400 text-xs mt-1">~500字/分钟</div>
       </div>
 
-      {/* Chapters */}
+      {/* 章节 */}
       <div className="bg-gradient-to-br from-slate-700 to-slate-800 border border-sky-500/30 p-4 rounded-lg shadow-lg hover:border-sky-500/50 transition-colors">
-        <div className="text-sky-300 text-sm font-medium mb-1">Chapters</div>
+        <div className="text-sky-300 text-sm font-medium mb-1">章节</div>
         <div className="text-white text-3xl font-bold">{stats.chapterCount}</div>
-        <div className="text-slate-400 text-xs mt-1">{stats.avgWordsPerChapter.toLocaleString()} words avg</div>
+        <div className="text-slate-400 text-xs mt-1">{stats.avgWordsPerChapter.toLocaleString()} 字平均</div>
       </div>
 
-      {/* Dialogue Ratio */}
+      {/* 对话 Ratio */}
       <div className="bg-gradient-to-br from-slate-700 to-slate-800 border border-sky-500/30 p-4 rounded-lg shadow-lg hover:border-sky-500/50 transition-colors">
-        <div className="text-sky-300 text-sm font-medium mb-1">Dialogue</div>
+        <div className="text-sky-300 text-sm font-medium mb-1">对话</div>
         <div className="text-white text-3xl font-bold">{stats.dialogueRatio}%</div>
-        <div className="text-slate-400 text-xs mt-1">of content</div>
+        <div className="text-slate-400 text-xs mt-1">内容占比</div>
       </div>
     </div>
   );
