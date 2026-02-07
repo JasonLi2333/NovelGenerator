@@ -7,11 +7,12 @@ import { Character } from '../types';
 export interface CharacterVoiceProfile {
   name: string;
   speechPatterns: string[];
-  vocabularyLevel: string; // 文雅、现代、江湖、古风、修仙、宫廷
+  vocabularyLevel: string; // 文雅、现代、江湖、古风、修仙、宫廷、纨绔、老怪
   emotionalRange: string; // 内敛、外放、暴躁、沉稳
   catchphrases?: string[];
   dialectNotes?: string;
-  communicationStyle: string; // 直接、委婉、啰嗦、简洁、诗意
+  communicationStyle: string; // 直接、委婉、啰嗦、简洁、诗意、嘲讽、舔狗
+  roleType?: string; // 主角、反派、路人、配角等
 }
 
 /**
@@ -22,7 +23,11 @@ export function generateVoiceProfile(character: Character): CharacterVoiceProfil
   
   // 推断词汇层次
   let vocabularyLevel = '现代';
-  if (description.includes('仙') || description.includes('修') || description.includes('道')) {
+  if (description.includes('纨绔') || description.includes('公子') || description.includes('少爷') || description.includes('龙傲天')) {
+    vocabularyLevel = '纨绔';
+  } else if (description.includes('老怪') || description.includes('老魔') || description.includes('老妖') || description.includes('老祖')) {
+    vocabularyLevel = '老怪';
+  } else if (description.includes('仙') || description.includes('修') || description.includes('道')) {
     vocabularyLevel = '修仙';
   } else if (description.includes('古') || description.includes('宫') || description.includes('皇') || description.includes('朝')) {
     vocabularyLevel = '古风';
@@ -46,7 +51,11 @@ export function generateVoiceProfile(character: Character): CharacterVoiceProfil
   
   // 推断交流风格
   let communicationStyle = '直接';
-  if (description.includes('诗人') || description.includes('文人') || description.includes('书生')) {
+  if (description.includes('嘲讽') || description.includes('讽刺') || description.includes('挖苦') || description.includes('拉仇恨')) {
+    communicationStyle = '嘲讽';
+  } else if (description.includes('舔狗') || description.includes('讨好') || description.includes('捧哏') || description.includes('逢迎')) {
+    communicationStyle = '舔狗';
+  } else if (description.includes('诗人') || description.includes('文人') || description.includes('书生')) {
     communicationStyle = '诗意';
   } else if (description.includes('直率') || description.includes('武者') || description.includes('军人')) {
     communicationStyle = '简洁';
@@ -55,13 +64,26 @@ export function generateVoiceProfile(character: Character): CharacterVoiceProfil
   } else if (description.includes('学者') || description.includes('夫子')) {
     communicationStyle = '啰嗦';
   }
-  
+
+  // 推断角色类型
+  let roleType = '配角';
+  if (description.includes('主角') || description.includes('主人公') || description.includes('主角光环')) {
+    roleType = '主角';
+  } else if (description.includes('反派') || description.includes('大boss') || description.includes('敌人') || description.includes('villain')) {
+    roleType = '反派';
+  } else if (description.includes('路人') || description.includes('龙套') || description.includes('配角') || description.includes('小角色')) {
+    roleType = '路人';
+  } else if (description.includes('师兄') || description.includes('师妹') || description.includes('师傅') || description.includes('徒弟')) {
+    roleType = '配角';
+  }
+
   return {
     name: character.name,
     speechPatterns: [],
     vocabularyLevel,
     emotionalRange,
-    communicationStyle
+    communicationStyle,
+    roleType
   };
 }
 
@@ -88,6 +110,12 @@ export function getDialogueGuidelines(profile: CharacterVoiceProfile): string {
     case '宫廷':
       guidelines += `- 使用宫廷敬语、尊称\n- 语气恭敬或威严\n- 注重礼仪和等级\n- 例："臣以为...""启禀陛下...""本宫..."\n`;
       break;
+    case '纨绔':
+      guidelines += `- 使用高傲、自大的语气\n- 经常自称"本少爷""本公子""我龙傲天"\n- 瞧不起别人，颐指气使\n- 喜欢炫耀财富和背景\n- 例："本少爷看上你了...""你知道我是谁吗？""敢得罪我龙傲天！"\n`;
+      break;
+    case '老怪':
+      guidelines += `- 使用阴森、诡异的语气\n- 经常发出"桀桀桀"的怪笑\n- 说话喜欢绕弯子、卖关子\n- 喜欢自称"老祖""老夫"等\n- 例："桀桀桀，小娃娃...""老祖我活了八百年...""年轻人，你不懂啊..."\n`;
+      break;
     default: // 现代
       guidelines += `- 使用现代日常用语\n- 自然、轻松的表达\n- 可使用网络流行语（适度）\n- 例："我觉得...""这个...""那啥..."\n`;
   }
@@ -105,6 +133,12 @@ export function getDialogueGuidelines(profile: CharacterVoiceProfile): string {
       break;
     case '委婉':
       guidelines += `- 暗示而非直说\n- 使用委婉语和谨慎措辞\n- 圆滑、得体\n- 留有解释余地\n- 例："恐怕...""或许...""不妨..."\n`;
+      break;
+    case '嘲讽':
+      guidelines += `- 使用讽刺、挖苦的语气\n- 专门挑刺、拉仇恨\n- 说话带刺，让人难堪\n- 喜欢揭人短处\n- 例："就你这水平还想...？""啧啧啧，真可怜...""你确定你行吗？"\n`;
+      break;
+    case '舔狗':
+      guidelines += `- 讨好、谄媚的语气\n- 专门捧哏、拍马屁\n- 说话小心翼翼，生怕得罪人\n- 喜欢吹捧对方\n- 例："您说得太对了...""我听您的...""您真厉害..."\n`;
       break;
     default: // 直接
       guidelines += `- 说话清晰明了\n- 直截了当、诚实\n- 不拐弯抹角\n- 重视清晰胜过圆滑\n- 例："我就直说了。""实话告诉你。"\n`;
@@ -132,7 +166,29 @@ export function getDialogueGuidelines(profile: CharacterVoiceProfile): string {
   if (profile.dialectNotes) {
     guidelines += `\n**方言/口音特点：** ${profile.dialectNotes}\n`;
   }
-  
+
+  // 角色类型专用指南
+  if (profile.roleType) {
+    switch (profile.roleType) {
+      case '反派':
+        guidelines += `\n**反派专用指南：**\n`;
+        guidelines += `- 死于话多：在战斗前或战斗中一定要自报家门\n- 打架前必自报家门："吾乃XXX，今日特来取你狗命！"\n- 喜欢炫耀自己的来历和实力\n- 死前往往会有长篇大论的遗言\n- 例："桀桀桀，你可知吾乃XXX宗宗主...""小子，你惹怒我了！"\n`;
+        break;
+      case '路人':
+        guidelines += `\n**路人专用指南：**\n`;
+        guidelines += `- 负责震惊和解说战况："恐怖如斯！""天哪，这也太强了吧！"\n- 围观群众的反应要夸张\n- 喜欢八卦和传播消息\n- 对话简短，起到烘托氛围的作用\n- 例："哇！那人好厉害！""听说XXX又干了什么...""太可怕了！"\n`;
+        break;
+      case '主角':
+        guidelines += `\n**主角专用指南：**\n`;
+        guidelines += `- 拥有主角光环，说话往往一语中的\n- 即使弱小也有底气\n- 喜欢装逼但实力匹配\n- 面对危机时冷静应对\n- 例："你以为这样就结束了？""今天我就要逆天改命！"\n`;
+        break;
+      case '配角':
+        guidelines += `\n**配角专用指南：**\n`;
+        guidelines += `- 适度衬托主角，不要抢戏\n- 有自己的小聪明和小算盘\n- 对话符合身份和地位\n- 适当提供信息和助力\n- 例：符合角色的身份说话，如师兄关心师弟，朋友仗义相助\n`;
+        break;
+    }
+  }
+
   return guidelines;
 }
 
