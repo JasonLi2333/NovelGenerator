@@ -46,7 +46,7 @@ export interface ReaderKnowledge {
 export interface SharedChapterState {
   chapterNumber: number;
   sceneType: 'action' | 'emotional' | 'revelation' | 'setup' | 'climax';
-  currentTone: 'tense' | 'reflective' | 'urgent' | 'mysterious' | 'calm';
+  currentTone: 'tense' | 'reflective' | 'urgent' | 'mysterious' | 'calm' | 'face-slapping';
 
   // Content tracking
   wordCounts: {
@@ -155,19 +155,21 @@ export class StoryContextDatabase {
     const currentState = this.currentChapterState;
 
     if (agentType === 'character') {
-      // Internal monologue limits
+      // Internal monologue limits - relaxed for psychological gameplay
       if (proposedAddition.includes('[INTERNAL')) {
         const internalWords = this.extractInternalWords(proposedAddition);
 
-        if (internalWords > 150) {
+        // Increased limit for psychological gameplay that readers enjoy
+        if (internalWords > 250) {
           return {
             allowed: false,
-            reason: `Internal monologue too long: ${internalWords} words (max 150)`,
+            reason: `Internal monologue too long: ${internalWords} words (max 250)`,
             suggestedAction: 'condense-internal'
           };
         }
 
-        if (currentState.consecutiveBlocks.internal >= 3) {
+        // Relaxed consecutive block limit for psychological depth
+        if (currentState.consecutiveBlocks.internal >= 4) {
           return {
             allowed: false,
             reason: 'Too many consecutive internal blocks',
@@ -178,6 +180,18 @@ export class StoryContextDatabase {
     }
 
     if (agentType === 'scene') {
+      // Stricter environmental description limits (web novels avoid lengthy scenery)
+      if (proposedAddition.includes('[DESCRIPTION')) {
+        const descriptionWords = this.extractDescriptionWords(proposedAddition);
+        if (descriptionWords > 100) {
+          return {
+            allowed: false,
+            reason: `Environmental description too long: ${descriptionWords} words (max 100)`,
+            suggestedAction: 'condense-description'
+          };
+        }
+      }
+
       // Sensory overload check
       const sensoryCount = this.countSensoryDetails(proposedAddition);
       if (sensoryCount > 2) {
@@ -234,6 +248,14 @@ export class StoryContextDatabase {
           detailLevel: 'action-focused'
         };
 
+      case 'face-slapping':
+        return {
+          descriptionLength: 'minimal',
+          sentenceStyle: 'sharp',
+          sensoryFocus: 'hearing',
+          detailLevel: 'action-focused'
+        };
+
       default:
         return {
           descriptionLength: 'medium',
@@ -262,14 +284,14 @@ export class StoryContextDatabase {
 
     const issues: BalanceIssue[] = [];
 
-    // Check description overload
-    if (percentages.description > expectedBalance.description + 10) {
+    // Check description overload - stricter for web novels
+    if (percentages.description > expectedBalance.description + 5) {
       issues.push({
         type: 'description-overload',
         severity: 'high',
         current: percentages.description,
         expected: expectedBalance.description,
-        suggestion: 'Reduce environmental descriptions, focus on essential details'
+        suggestion: 'Reduce environmental descriptions, web novels prefer concise scenery'
       });
     }
 
@@ -325,6 +347,12 @@ export class StoryContextDatabase {
     // Simple tone analysis based on keywords and patterns
     const lowerOutput = characterOutput.toLowerCase();
 
+    if (lowerOutput.includes('打脸') || lowerOutput.includes('嘲讽') ||
+        lowerOutput.includes('羞辱') || lowerOutput.includes('反击') ||
+        lowerOutput.includes('不屑') || lowerOutput.includes('冷笑')) {
+      return 'face-slapping';
+    }
+
     if (lowerOutput.includes('danger') || lowerOutput.includes('weapon') ||
         lowerOutput.includes('threat')) {
       return 'tense';
@@ -373,9 +401,21 @@ export class StoryContextDatabase {
   private extractInternalWords(text: string): number {
     // Extract words from internal monologue sections
     const internalSections = text.match(/\[INTERNAL[^\]]*\]([^[]*)/g) || [];
-    return internalSections.reduce((total, section) =>
-      total + this.countWords(section), 0
-    );
+    let total = 0;
+    for (const section of internalSections) {
+      total += this.countWords(section);
+    }
+    return total;
+  }
+
+  private extractDescriptionWords(text: string): number {
+    // Extract words from description sections
+    const descriptionSections = text.match(/\[DESCRIPTION[^\]]*\]([^[]*)/g) || [];
+    let total = 0;
+    for (const section of descriptionSections) {
+      total += this.countWords(section);
+    }
+    return total;
   }
 
   private countSensoryDetails(text: string): number {
@@ -398,7 +438,7 @@ export class StoryContextDatabase {
     );
   }
 
-  private getExpectedBalance(sceneType: string): Record<string, number> {
+  private getExpectedBalance(sceneType: string): { description: number; action: number; dialogue: number; internal: number } {
     switch (sceneType) {
       case 'action':
         return { description: 10, action: 80, dialogue: 10, internal: 0 };
@@ -464,7 +504,7 @@ export interface RevelationValidation {
 export interface ContentLimitCheck {
   allowed: boolean;
   reason: string;
-  suggestedAction?: 'condense-internal' | 'add-micro-action' | 'reduce-sensory';
+  suggestedAction?: 'condense-internal' | 'add-micro-action' | 'reduce-sensory' | 'condense-description';
 }
 
 export interface ToneGuidance {
