@@ -127,8 +127,8 @@ export async function analyzeAndDecide(context: EditingContext): Promise<AgentDe
  */
 function fallbackDecision(context: EditingContext): AgentDecision {
   const critique = context.critiqueNotes.toLowerCase();
-  
-  if (!context.critiqueNotes || context.critiqueNotes.includes('CHAPTER IS STRONG')) {
+
+  if (!context.critiqueNotes || context.critiqueNotes.includes('章节很棒') || context.critiqueNotes.includes('章节强劲')) {
     return {
       strategy: 'skip',
       reasoning: 'No issues identified or chapter marked as strong',
@@ -137,8 +137,8 @@ function fallbackDecision(context: EditingContext): AgentDecision {
       confidence: 90
     };
   }
-  
-  if (critique.includes('moral simplicity') || critique.includes('flat') || critique.includes('archetypal')) {
+
+  if (critique.includes('道德简单') || critique.includes('平淡') || critique.includes('原型化') || critique.includes('刻板印象')) {
     return {
       strategy: 'regenerate',
       reasoning: 'Serious structural issues detected',
@@ -147,8 +147,8 @@ function fallbackDecision(context: EditingContext): AgentDecision {
       confidence: 75
     };
   }
-  
-  if (critique.includes('metaphor') || critique.includes('adjective') || critique.includes('adverb')) {
+
+  if (critique.includes('比喻') || critique.includes('形容词') || critique.includes('副词') || critique.includes('过度写作')) {
     return {
       strategy: 'targeted-edit',
       reasoning: 'Language-level issues detected',
@@ -157,7 +157,7 @@ function fallbackDecision(context: EditingContext): AgentDecision {
       confidence: 70
     };
   }
-  
+
   return {
     strategy: 'polish',
     reasoning: 'Minor improvements needed',

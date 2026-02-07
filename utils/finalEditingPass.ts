@@ -183,23 +183,23 @@ ${previousContext}${nextContext}
  * Builds chapter plan text from parsed plan object
  */
 function buildChapterPlanText(plan: ParsedChapterPlan): string {
-  return `Title: ${plan.title || 'Untitled'}
-Summary: ${plan.summary || 'No summary'}
-Scene Breakdown: ${plan.sceneBreakdown || 'No breakdown'}
-Character Development Focus: ${plan.characterDevelopmentFocus || 'Not specified'}
-Plot Advancement: ${plan.plotAdvancement || 'Not specified'}
-Timeline Indicators: ${plan.timelineIndicators || 'Not specified'}
-Emotional Tone/Tension: ${plan.emotionalToneTension || 'Not specified'}
-Connection to Next Chapter: ${plan.connectionToNextChapter || 'Not specified'}
-Conflict Type: ${plan.conflictType || 'Not specified'}
-Tension Level: ${plan.tensionLevel || 'Not specified'}/10
-Rhythm/Pacing: ${plan.rhythmPacing || 'Not specified'}
-Word Economy Focus: ${plan.wordEconomyFocus || 'Not specified'}
+  return `标题: ${plan.title || '未命名'}
+概要: ${plan.summary || '无概要'}
+场景分解: ${plan.sceneBreakdown || '无分解'}
+角色发展重点: ${plan.characterDevelopmentFocus || '未指定'}
+情节推进: ${plan.plotAdvancement || '未指定'}
+时间线指示: ${plan.timelineIndicators || '未指定'}
+情感基调/张力: ${plan.emotionalToneTension || '未指定'}
+与下一章的连接: ${plan.connectionToNextChapter || '未指定'}
+冲突类型: ${plan.conflictType || '未指定'}
+张力等级: ${plan.tensionLevel || '未指定'}/10
+节奏/步调: ${plan.rhythmPacing || '未指定'}
+文字经济重点: ${plan.wordEconomyFocus || '未指定'}
 
-**MORAL & CHARACTER DEPTH:**
-Moral Dilemma: ${plan.moralDilemma || 'Not specified'}
-Character Complexity: ${plan.characterComplexity || 'Not specified'}
-Consequences of Choices: ${plan.consequencesOfChoices || 'Not specified'}`.trim();
+**道德与角色深度:**
+道德困境: ${plan.moralDilemma || '未指定'}
+角色复杂性: ${plan.characterComplexity || '未指定'}
+选择后果: ${plan.consequencesOfChoices || '未指定'}`.trim();
 }
 
 /**
