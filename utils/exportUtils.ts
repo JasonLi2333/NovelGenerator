@@ -45,11 +45,16 @@ function downloadBlob(blob: Blob, filename: string): void {
  * Generate filename from book title (支持中文)
  */
 export function sanitizeFilename(title: string): string {
-  // Support Chinese characters and alphanumeric
+  // Support Chinese characters and alphanumeric, keep safe punctuation
   return title
+    .trim()
     .replace(/[<>:"/\\|?*\x00-\x1f]/g, '') // Remove invalid filename characters
-    .replace(/\s+/g, '_') // Replace spaces with underscores
-    .substring(0, 100) || '作品'; // Increased length for Chinese, default to "作品"
+    .replace(/[\s\u00A0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000]+/g, '_') // Replace all types of spaces with underscores
+    .replace(/_{2,}/g, '_') // Remove consecutive underscores
+    .replace(/^_|_$/g, '') // Remove leading/trailing underscores
+    .substring(0, 200) // Allow longer filenames for Chinese characters
+    .replace(/^$/, '作品') // Default to "作品" if empty
+    || '作品';
 }
 
 /**
@@ -140,7 +145,7 @@ export async function exportAsEpub(content: string, metadata: any, filename: str
     <dc:identifier id="uuid">${uuid}</dc:identifier>
     <dc:title>${title}</dc:title>
     <dc:creator>${author}</dc:creator>
-    <dc:language>en</dc:language>
+    <dc:language>zh</dc:language>
     <meta property="dcterms:modified">${new Date().toISOString().split('.')[0]}Z</meta>
   </metadata>
   <manifest>
@@ -178,7 +183,7 @@ ${navItems}
   // 6. stylesheet.css
   oebps.file('stylesheet.css',
 `body {
-  font-family: Georgia, serif;
+  font-family: 'SimSun', 'Songti SC', 'Microsoft YaHei', serif;
   line-height: 1.6;
   margin: 1em;
 }
@@ -192,7 +197,7 @@ h2 {
   page-break-before: always;
 }
 p {
-  text-indent: 1.5em;
+  text-indent: 2em;
   margin: 0.5em 0;
   text-align: justify;
 }
@@ -321,7 +326,7 @@ export function exportAsPdf(content: string, metadata: any): void {
           margin: 2cm;
         }
         body {
-          font-family: Georgia, serif;
+          font-family: 'SimSun', 'Songti SC', 'Microsoft YaHei', serif;
           line-height: 1.6;
           color: #000;
           max-width: 800px;
@@ -348,7 +353,7 @@ export function exportAsPdf(content: string, metadata: any): void {
         }
         p {
           text-align: justify;
-          text-indent: 1.5em;
+          text-indent: 2em;
           margin: 0.5em 0;
           orphans: 3;
           widows: 3;

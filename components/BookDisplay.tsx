@@ -35,7 +35,7 @@ const BookDisplay: React.FC<BookDisplayProps> = ({ bookContent, metadataJson, on
       setTimeout(() => setCopiedStates(prev => ({ ...prev, [type]: false })), 2000);
     }).catch(err => {
       console.error('Failed to copy text: ', err);
-      alert('Failed to copy text. Please try manually.');
+      alert('复制文本失败，请手动尝试。');
     });
   };
   
@@ -131,7 +131,7 @@ const BookDisplay: React.FC<BookDisplayProps> = ({ bookContent, metadataJson, on
 
       {activeTab === 'timeline' && (
         <div className="p-4 bg-slate-700 rounded-md shadow max-h-[60vh] overflow-y-auto">
-          <h3 className="text-2xl font-semibold text-sky-400 mb-6 text-center">Story 时间线</h3>
+          <h3 className="text-2xl font-semibold text-sky-400 mb-6 text-center">故事时间线</h3>
           {timelineData && chapterSummaries ? (
               <div className="relative pl-8 border-l-2 border-slate-600">
                   {Object.entries(timelineData).sort(([a], [b]) => parseInt(a) - parseInt(b)).map(([chapterNum, raw时间线Entry]) => {
@@ -143,18 +143,18 @@ const BookDisplay: React.FC<BookDisplayProps> = ({ bookContent, metadataJson, on
                               <div className="absolute -left-[39px] top-1 h-5 w-5 bg-sky-500 rounded-full border-4 border-slate-700" aria-hidden="true"></div>
                               <p className="text-sm text-slate-400 font-mono">{timelineEntry.endTimeOfChapter}</p>
                               <h4 className="text-xl font-bold text-sky-300 mt-1">
-                                  Chapter {chapterNum}: {chapterInfo?.title || 'Untitled'}
+                                  第{chapterNum}章: {chapterInfo?.title || '无标题'}
                               </h4>
                               <div className="mt-2 text-slate-300 text-sm space-y-1 pl-2 border-l-2 border-slate-600/50 ml-1">
-                                  <p><strong className="font-semibold text-slate-200">Time Elapsed:</strong> {timelineEntry.timeElapsed}</p>
-                                  {timelineEntry.specificMarkers && timelineEntry.specificMarkers !== 'None' && <p><strong className="font-semibold text-slate-200">Key Markers:</strong> {timelineEntry.specificMarkers}</p>}
+                                  <p><strong className="font-semibold text-slate-200">经过时间:</strong> {timelineEntry.timeElapsed}</p>
+                                  {timelineEntry.specificMarkers && timelineEntry.specificMarkers !== 'None' && <p><strong className="font-semibold text-slate-200">关键标记:</strong> {timelineEntry.specificMarkers}</p>}
                               </div>
                           </div>
                       );
                   })}
               </div>
           ) : (
-              <p className="text-center text-slate-400">时间线 data is not available in the metadata.</p>
+              <p className="text-center text-slate-400">时间线数据在元数据中不可用。</p>
           )}
         </div>
       )}

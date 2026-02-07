@@ -1,5 +1,5 @@
 /**
- * Prompt loading and templating utilities
+ * 提示加载和模板化工具
  */
 
 export interface PromptTemplate {
@@ -7,12 +7,12 @@ export interface PromptTemplate {
   userPrompt: string;
 }
 
-// Since this runs in browser, we'll embed the prompts directly in the code
-// This is more efficient for a bundled application
+// 由于这在浏览器中运行，我们将提示直接嵌入代码中
+// 这对打包应用程序更有效
 const PROMPT_TEMPLATES: Record<string, PromptTemplate> = {};
 
 /**
- * Load a prompt template from the embedded templates
+ * 从嵌入的模板中加载提示模板
  */
 export function loadPromptTemplate(promptName: string): PromptTemplate {
   const template = PROMPT_TEMPLATES[promptName];
@@ -24,14 +24,14 @@ export function loadPromptTemplate(promptName: string): PromptTemplate {
 }
 
 /**
- * Register a prompt template (for initialization)
+ * 注册提示模板（用于初始化）
  */
 export function registerPromptTemplate(name: string, template: PromptTemplate) {
   PROMPT_TEMPLATES[name] = template;
 }
 
 /**
- * Replace template variables in a prompt string
+ * 替换提示字符串中的模板变量
  */
 export function formatPrompt(template: string, variables: Record<string, any>): string {
   let formatted = template;
@@ -45,7 +45,7 @@ export function formatPrompt(template: string, variables: Record<string, any>): 
 }
 
 /**
- * Get a formatted prompt ready for use with the AI
+ * 获取格式化的提示，准备与AI一起使用
  */
 export function getFormattedPrompt(promptName: string, variables: Record<string, any> = {}): PromptTemplate {
   const template = loadPromptTemplate(promptName);
@@ -57,7 +57,7 @@ export function getFormattedPrompt(promptName: string, variables: Record<string,
 }
 
 /**
- * Prompt names enum for type safety
+ * 提示名称枚举，用于类型安全
  */
 export enum PromptNames {
   STORY_OUTLINE = 'story-outline-generation',

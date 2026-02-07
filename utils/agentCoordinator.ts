@@ -1,5 +1,5 @@
 /**
- * Agent Coordinator - Central orchestrator for hybrid multi-agent chapter generation
+ * 代理协调器 - 混合多代理章节生成的中央协调器
  */
 
 import { ChapterData, ParsedChapterPlan, Character } from '../types';
@@ -10,7 +10,7 @@ import { agentEditChapter } from './editingAgent';
 import { generateText } from '../services/llm';
 import { storyContextDB, SharedChapterState, RevelationValidation, ContentLimitCheck, ToneGuidance, BalanceReport } from './storyContextDatabase';
 
-// =================== INTERFACES ===================
+// =================== 接口 ===================
 
 export interface ChapterGenerationInput {
   chapterNumber: number;
@@ -19,7 +19,7 @@ export interface ChapterGenerationInput {
   previousChapterEnd?: string;
   storyOutline: string;
   targetLength: number;
-  genre?: string; // User's selected genre
+  genre?: string; // 用户选择的类型
 }
 
 export interface GenerationPhaseResult {
@@ -54,7 +54,7 @@ export interface GenerationOptions {
   maxRetries: number;
 }
 
-// =================== AGENT COORDINATOR CLASS ===================
+// =================== 代理协调器类 ===================
 
 export class AgentCoordinator {
   private options: GenerationOptions;
@@ -63,52 +63,52 @@ export class AgentCoordinator {
     this.options = {
       enableLightPolish: true,
       enableConsistencyCheck: true,
-      enableFallbackToOldSystem: false, // Disable fallback to force coordinated system
-      parallelProcessing: false, // Use sequential coordinated generation
+      enableFallbackToOldSystem: false, // 禁用回退以强制使用协调系统
+      parallelProcessing: false, // 使用顺序协调生成
       maxRetries: 2,
       ...options
     };
   }
 
-  // =================== MAIN GENERATION METHOD ===================
+  // =================== 主要生成方法 ===================
 
   async generateChapter(input: ChapterGenerationInput): Promise<HybridGenerationResult> {
     const startTime = Date.now();
     const phases: GenerationPhaseResult[] = [];
 
-    console.log(`🚀 Starting hybrid generation for Chapter ${input.chapterNumber}: "${input.chapterPlan.title}"`);
+    console.log(`🚀 开始为第 ${input.chapterNumber} 章生成混合内容: "${input.chapterPlan.title}"`);
 
     try {
-      // Phase 1: Context Preparation
-      const contextPhase = await this.executePhase('Context Preparation', async () => {
+      // 第一阶段：上下文准备
+      const contextPhase = await this.executePhase('上下文准备', async () => {
         return await this.prepareContext(input);
       });
       phases.push(contextPhase);
 
       if (!contextPhase.success) {
-        throw new Error('Context preparation failed');
+        throw new Error('上下文准备失败');
       }
 
       const context = contextPhase.output as ChapterContext;
 
-      // Phase 2: Coordinated Sequential Generation
-      const generationPhase = await this.executePhase('Coordinated Specialist Generation', async () => {
+      // 第二阶段：协调顺序生成
+      const generationPhase = await this.executePhase('协调专家生成', async () => {
         return await this.coordinatedSequentialGeneration(input, context);
       });
       phases.push(generationPhase);
 
       if (!generationPhase.success) {
         if (this.options.enableFallbackToOldSystem) {
-          console.log('🔄 Falling back to old generation system...');
+          console.log('🔄 回退到旧生成系统...');
           return await this.fallbackToOldSystem(input);
         }
-        throw new Error('Specialist generation failed');
+        throw new Error('专家生成失败');
       }
 
       const { structureOutput, characterOutput, sceneOutput } = generationPhase.output;
 
-      // Phase 3: Synthesis with Macro Validation
-      const synthesisPhase = await this.executePhase('Synthesis & Macro Validation', async () => {
+      // 第三阶段：合成与宏观验证
+      const synthesisPhase = await this.executePhase('合成与宏观验证', async () => {
         const balanceReport = storyContextDB.validateChapterBalance();
 
         return await this.synthesisWithValidation({
@@ -123,17 +123,17 @@ export class AgentCoordinator {
       phases.push(synthesisPhase);
 
       if (!synthesisPhase.success) {
-        throw new Error('Content synthesis failed');
+        throw new Error('内容合成失败');
       }
 
       const synthesisResult = synthesisPhase.output;
       let finalContent = synthesisResult.integratedChapter;
 
-      console.log(`🔗 Content synthesis completed with high-quality agent coordination`);
+      console.log(`🔗 内容合成完成，采用高质量代理协调`);
 
-      // Phase 4: Light Polish (Optional)
+      // 第四阶段：轻度润色（可选）
       if (this.options.enableLightPolish) {
-        const polishPhase = await this.executePhase('Light Polish', async () => {
+        const polishPhase = await this.executePhase('轻度润色', async () => {
           return await this.applyLightPolish(finalContent, input);
         });
         phases.push(polishPhase);
@@ -143,27 +143,27 @@ export class AgentCoordinator {
         }
       }
 
-      // Phase 5: Repetition Check & Fix
-      const repetitionPhase = await this.executePhase('Repetition Check', async () => {
+      // 第五阶段：重复检查与修复
+      const repetitionPhase = await this.executePhase('重复检查', async () => {
         const repetitionReport = coherenceManager.checkForRepetition(finalContent, input.chapterNumber);
 
         if (repetitionReport.severity === 'high' || repetitionReport.totalRepetitions > 2) {
-          console.log(`⚠️ High repetition detected in Chapter ${input.chapterNumber}:`, repetitionReport.issues.map(i => i.phrase));
+          console.log(`⚠️ 在第 ${input.chapterNumber} 章检测到高度重复:`, repetitionReport.issues.map(i => i.phrase));
 
-          // Apply repetition fixes to final content
+          // 对最终内容应用重复修复
           let fixedContent = finalContent;
           for (const issue of repetitionReport.issues) {
             if (issue.severity === 'high') {
-              // Simple repetition fix - could be enhanced
+              // 简单的重复修复 - 可以增强
               const regex = new RegExp(issue.phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
               const matches = fixedContent.match(regex);
               if (matches && matches.length > 1) {
-                // Keep first occurrence, replace others with variations
+                // 保留第一次出现，替换其他为变体
                 let replaceCount = 0;
                 fixedContent = fixedContent.replace(regex, (match) => {
                   if (replaceCount === 0) {
                     replaceCount++;
-                    return match; // Keep first
+                    return match; // 保留第一次
                   }
                   replaceCount++;
                   return this.getAlternativePhrase(match, issue.category);
@@ -181,11 +181,11 @@ export class AgentCoordinator {
 
       if (repetitionPhase.success && repetitionPhase.output?.fixed) {
         finalContent = repetitionPhase.output.fixedContent;
-        console.log(`🔧 Applied repetition fixes to Chapter ${input.chapterNumber}`);
+        console.log(`🔧 对第 ${input.chapterNumber} 章应用了重复修复`);
       }
 
-      // Phase 6: Coherence Update
-      const updatePhase = await this.executePhase('Coherence Update', async () => {
+      // 第六阶段：连贯性更新
+      const updatePhase = await this.executePhase('连贯性更新', async () => {
         const chapterData: ChapterData = {
           title: input.chapterPlan.title,
           content: finalContent,
@@ -200,10 +200,10 @@ export class AgentCoordinator {
 
       const finalChapterData = updatePhase.output as ChapterData;
 
-      // Calculate metadata
+      // 计算元数据
       const metadata = this.calculateMetadata(phases, startTime);
 
-      console.log(`✅ Hybrid generation complete for Chapter ${input.chapterNumber} (${metadata.totalTime}ms)`);
+      console.log(`✅ 第 ${input.chapterNumber} 章混合生成完成 (${metadata.totalTime}ms)`);
 
       return {
         success: true,
@@ -213,10 +213,10 @@ export class AgentCoordinator {
       };
 
     } catch (error) {
-      console.error(`❌ Hybrid generation failed for Chapter ${input.chapterNumber}:`, error);
+      console.error(`❌ 第 ${input.chapterNumber} 章混合生成失败:`, error);
 
       if (this.options.enableFallbackToOldSystem) {
-        console.log('🔄 Attempting fallback to old system...');
+        console.log('🔄 尝试回退到旧系统...');
         return await this.fallbackToOldSystem(input);
       }
 
@@ -224,7 +224,7 @@ export class AgentCoordinator {
         success: false,
         chapterData: {
           title: input.chapterPlan.title,
-          content: `Error generating chapter: ${error}`,
+          content: `生成章节时出错: ${error}`,
           plan: this.formatChapterPlan(input.chapterPlan)
         },
         phases,
@@ -233,20 +233,20 @@ export class AgentCoordinator {
     }
   }
 
-  // =================== PHASE EXECUTION ===================
+  // =================== 阶段执行 ===================
 
   private async executePhase<T>(
     phaseName: string,
     phaseFunction: () => Promise<T>
   ): Promise<GenerationPhaseResult> {
     const startTime = Date.now();
-    console.log(`📋 Starting phase: ${phaseName}`);
+    console.log(`📋 开始阶段: ${phaseName}`);
 
     try {
       const output = await phaseFunction();
       const duration = Date.now() - startTime;
 
-      console.log(`✅ Phase complete: ${phaseName} (${duration}ms)`);
+      console.log(`✅ 阶段完成: ${phaseName} (${duration}ms)`);
 
       return {
         phaseName,
@@ -257,7 +257,7 @@ export class AgentCoordinator {
     } catch (error) {
       const duration = Date.now() - startTime;
 
-      console.error(`❌ Phase failed: ${phaseName} (${duration}ms):`, error);
+      console.error(`❌ 阶段失败: ${phaseName} (${duration}ms):`, error);
 
       return {
         phaseName,
@@ -268,35 +268,35 @@ export class AgentCoordinator {
     }
   }
 
-  // =================== CONTEXT PREPARATION ===================
+  // =================== 上下文准备 ===================
 
   private async prepareContext(input: ChapterGenerationInput): Promise<ChapterContext> {
-    // Initialize coherence manager if first chapter
+    // 如果是第一章，初始化连贯性管理器
     if (input.chapterNumber === 1) {
       coherenceManager.initializeFromOutline(
         input.storyOutline,
         input.characters,
-        10 // Assuming 10 chapters - should come from input
+        10 // 假设10章 - 应该来自输入
       );
     }
 
-    // Prepare chapter context
+    // 准备章节上下文
     const context = coherenceManager.prepareChapterContext(
       input.chapterNumber,
       input.chapterPlan
     );
 
-    console.log(`📋 Context prepared with ${context.structure.plotThreadsToAdvance.length} plot threads`);
+    console.log(`📋 上下文已准备，包含 ${context.structure.plotThreadsToAdvance.length} 个要推进的情节线`);
     return context;
   }
 
-  // =================== SPECIALIST GENERATION ===================
+  // =================== 专家生成 ===================
 
   private async parallelSpecialistGeneration(
     input: ChapterGenerationInput,
     context: ChapterContext
   ) {
-    console.log(`⚡ Running specialist agents in parallel...`);
+    console.log(`⚡ 并行运行专家代理...`);
 
     const [structureOutput, characterOutput, sceneOutput] = await Promise.all([
       structureAgent.generate({
@@ -313,7 +313,7 @@ export class AgentCoordinator {
         chapterNumber: input.chapterNumber,
         context: context.character,
         constraints: context.constraints,
-        structureSlots: { dialogueSlots: [], actionSlots: [], internalSlots: [], descriptionSlots: [] }, // Will be filled after structure
+        structureSlots: { dialogueSlots: [], actionSlots: [], internalSlots: [], descriptionSlots: [] }, // 结构后填充
         dialogueRequirements: this.generateDialogueRequirements(input.chapterPlan, input.characters),
         storyOutline: input.storyOutline,
         genre: input.genre
@@ -323,13 +323,13 @@ export class AgentCoordinator {
         chapterNumber: input.chapterNumber,
         context: context.scene,
         constraints: context.constraints,
-        structureSlots: { dialogueSlots: [], actionSlots: [], internalSlots: [], descriptionSlots: [] }, // Will be filled after structure
+        structureSlots: { dialogueSlots: [], actionSlots: [], internalSlots: [], descriptionSlots: [] }, // 结构后填充
         storyOutline: input.storyOutline,
         genre: input.genre
       })
     ]);
 
-    // Update character and scene outputs with actual structure slots
+    // 使用实际结构插槽更新角色和场景输出
     const updatedCharacterOutput = await this.updateWithStructureSlots(
       characterOutput,
       structureOutput,
@@ -355,9 +355,9 @@ export class AgentCoordinator {
     input: ChapterGenerationInput,
     context: ChapterContext
   ) {
-    console.log(`🔄 Running specialist agents sequentially...`);
+    console.log(`🔄 顺序运行专家代理...`);
 
-    // First: Structure Agent
+    // 首先：结构代理
     const structureOutput = await structureAgent.generate({
       chapterPlan: input.chapterPlan,
       chapterNumber: input.chapterNumber,
@@ -368,13 +368,13 @@ export class AgentCoordinator {
       storyOutline: input.storyOutline
     });
 
-    console.log(`📊 Structure Agent created slots:`);
-    console.log(`   - Dialogue slots: ${structureOutput.slots.dialogueSlots.length} - ${structureOutput.slots.dialogueSlots.join(', ')}`);
-    console.log(`   - Action slots: ${structureOutput.slots.actionSlots.length} - ${structureOutput.slots.actionSlots.join(', ')}`);
-    console.log(`   - Internal slots: ${structureOutput.slots.internalSlots.length} - ${structureOutput.slots.internalSlots.join(', ')}`);
-    console.log(`   - Description slots: ${structureOutput.slots.descriptionSlots.length} - ${structureOutput.slots.descriptionSlots.join(', ')}`);
+    console.log(`📊 结构代理创建的插槽:`);
+    console.log(`   - 对话插槽: ${structureOutput.slots.dialogueSlots.length} - ${structureOutput.slots.dialogueSlots.join(', ')}`);
+    console.log(`   - 动作插槽: ${structureOutput.slots.actionSlots.length} - ${structureOutput.slots.actionSlots.join(', ')}`);
+    console.log(`   - 内心插槽: ${structureOutput.slots.internalSlots.length} - ${structureOutput.slots.internalSlots.join(', ')}`);
+    console.log(`   - 描述插槽: ${structureOutput.slots.descriptionSlots.length} - ${structureOutput.slots.descriptionSlots.join(', ')}`);
 
-    // Then: Character Agent (with structure slots)
+    // 然后：角色代理（使用结构插槽）
     const characterOutput = await characterAgent.generate({
       chapterPlan: input.chapterPlan,
       chapterNumber: input.chapterNumber,
@@ -386,7 +386,7 @@ export class AgentCoordinator {
       genre: input.genre
     });
 
-    // Finally: Scene Agent (with structure slots)
+    // 最后：场景代理（使用结构插槽）
     const sceneOutput = await sceneAgent.generate({
       chapterPlan: input.chapterPlan,
       chapterNumber: input.chapterNumber,
@@ -408,43 +408,43 @@ export class AgentCoordinator {
     const activeCharacters = characters ? Object.keys(characters) : ['protagonist'];
     const requirements: DialogueRequirement[] = [];
 
-    // Main dialogue based on chapter focus
+    // 基于章节重点的主要对话
     if (chapterPlan.characterDevelopmentFocus) {
       requirements.push({
         slotId: 'DIALOGUE_CHARACTER_DEVELOPMENT',
         characters: activeCharacters.slice(0, 2),
-        purpose: 'Character development and relationships',
+        purpose: '角色发展和关系构建',
         emotionalTone: chapterPlan.emotionalToneTension || 'neutral',
         subtext: chapterPlan.characterComplexity
       });
     }
 
-    // Conflict-related dialogue
+    // 冲突相关对话
     if (chapterPlan.conflictType) {
       requirements.push({
         slotId: 'DIALOGUE_CONFLICT',
         characters: activeCharacters,
-        purpose: `Address ${chapterPlan.conflictType} conflict`,
+        purpose: `处理${chapterPlan.conflictType}冲突`,
         emotionalTone: chapterPlan.emotionalToneTension || 'tense'
       });
     }
 
-    // Plot advancement dialogue
+    // 情节推进对话
     if (chapterPlan.plotAdvancement) {
       requirements.push({
         slotId: 'DIALOGUE_PLOT',
         characters: activeCharacters.slice(0, 2),
-        purpose: 'Advance main plot',
+        purpose: '推进主要情节',
         emotionalTone: chapterPlan.emotionalToneTension || 'neutral'
       });
     }
 
-    // Default dialogue if no specific requirements
+    // 如果没有特定要求，则使用默认对话
     if (requirements.length === 0) {
       requirements.push({
         slotId: 'DIALOGUE_MAIN',
         characters: activeCharacters.slice(0, 2),
-        purpose: 'Advance story',
+        purpose: '推进故事发展',
         emotionalTone: chapterPlan.emotionalToneTension || 'neutral'
       });
     }
@@ -458,22 +458,21 @@ export class AgentCoordinator {
     input: ChapterGenerationInput,
     context: ChapterContext
   ) {
-    // For parallel generation, we need to regenerate character/scene content
-    // with actual structure slots. This is a simplification - in production
-    // we'd have a more sophisticated update mechanism
+    // 对于并行生成，我们需要使用实际的结构插槽重新生成角色/场景内容
+    // 这是一个简化版本 - 在生产环境中，我们会有更复杂的更新机制
     return agentOutput;
   }
 
-  // =================== LIGHT POLISH ===================
+  // =================== 轻度润色 ===================
 
   private async applyLightPolish(
     content: string,
     input: ChapterGenerationInput
   ): Promise<string> {
-    console.log(`✨ Applying light polish to Chapter ${input.chapterNumber}...`);
+    console.log(`✨ 对第 ${input.chapterNumber} 章应用轻度润色...`);
 
     try {
-      // Use existing editing system in "light polish" mode
+      // 使用现有的编辑系统在"轻度润色"模式
       const editingResult = await agentEditChapter(
         {
           chapterContent: content,
@@ -482,7 +481,7 @@ export class AgentCoordinator {
           critiqueNotes: '仅轻度润色 - 保留专家内容质量',
           chapterNumber: input.chapterNumber,
           onLog: (entry) => {
-            console.log(`📝 Editing log: ${entry.message}`);
+            console.log(`📝 编辑日志: ${entry.message}`);
           }
         },
         (prompt, system, schema, temp, topP, topK) => generateText('editing', prompt, system, schema, temp, topP, topK)
@@ -490,44 +489,101 @@ export class AgentCoordinator {
 
       return editingResult.refinedContent;
     } catch (error) {
-      console.warn('Light polish failed, returning original content:', error);
+      console.warn('轻度润色失败，返回原始内容:', error);
       return content;
     }
   }
 
-  // =================== FALLBACK SYSTEM ===================
+  // =================== 回退系统 ===================
 
   private async fallbackToOldSystem(input: ChapterGenerationInput): Promise<HybridGenerationResult> {
-    console.log('🔄 Using fallback to old generation system...');
+    console.log('🔄 回退系统已禁用 - 强制使用协调式中文生成系统...');
 
-    // This would implement fallback to the existing chapter generation system
-    // For now, returning a placeholder
-    return {
-      success: false,
-      chapterData: {
+    // 由于我们要完全汉化，禁用回退到旧系统
+    // 改为直接重新尝试协调式生成（重试一次）
+    console.log('🔄 重新尝试协调式中文生成...');
+
+    try {
+      // 创建一个简化的上下文进行重试
+      const retryContext = coherenceManager.prepareChapterContext(
+        input.chapterNumber,
+        input.chapterPlan
+      );
+
+      // 重新尝试协调式生成
+      const retryResult = await this.coordinatedSequentialGeneration(input, retryContext);
+
+      // 如果重试成功，返回结果
+      const startTime = Date.now();
+      const finalContent = await this.synthesisWithValidation({
+        structureOutput: retryResult.structureOutput,
+        characterOutput: retryResult.characterOutput,
+        sceneOutput: retryResult.sceneOutput,
+        chapterNumber: input.chapterNumber,
+        chapterTitle: input.chapterPlan.title,
+        balanceReport: storyContextDB.validateChapterBalance()
+      });
+
+      const finalChapterData: ChapterData = {
         title: input.chapterPlan.title,
-        content: 'Fallback system not yet implemented - would use existing chapter generation',
-        plan: this.formatChapterPlan(input.chapterPlan)
-      },
-      phases: [{
-        phaseName: 'Fallback System',
-        duration: 0,
-        success: false,
-        errors: ['Fallback system not yet implemented']
-      }],
-      metadata: {
-        totalTime: 0,
-        agentPerformance: {},
-        qualityMetrics: {
-          coherenceScore: 0,
-          integrationScore: 0,
-          polishScore: 0
+        content: finalContent.integratedChapter,
+        plan: this.formatChapterPlan(input.chapterPlan),
+        summary: input.chapterPlan.summary
+      };
+
+      coherenceManager.updateFromGeneratedChapter(finalChapterData, input.chapterNumber);
+
+      return {
+        success: true,
+        chapterData: finalChapterData,
+        phases: [{
+          phaseName: '回退重试',
+          duration: Date.now() - startTime,
+          success: true,
+          output: finalContent
+        }],
+        metadata: {
+          totalTime: Date.now() - startTime,
+          agentPerformance: {
+            'coordinator': { time: Date.now() - startTime, confidence: 0.7 }
+          },
+          qualityMetrics: {
+            coherenceScore: 75,
+            integrationScore: 70,
+            polishScore: 65
+          }
         }
-      }
-    };
+      };
+
+    } catch (retryError) {
+      console.error('❌ 协调式生成重试也失败:', retryError);
+      return {
+        success: false,
+        chapterData: {
+          title: input.chapterPlan.title,
+          content: `协调式中文生成系统完全失败: ${retryError instanceof Error ? retryError.message : String(retryError)}`,
+          plan: this.formatChapterPlan(input.chapterPlan)
+        },
+        phases: [{
+          phaseName: '回退系统',
+          duration: 0,
+          success: false,
+          errors: ['协调式生成重试失败，已禁用旧系统回退']
+        }],
+        metadata: {
+          totalTime: 0,
+          agentPerformance: {},
+          qualityMetrics: {
+            coherenceScore: 0,
+            integrationScore: 0,
+            polishScore: 0
+          }
+        }
+      };
+    }
   }
 
-  // =================== HELPER METHODS ===================
+  // =================== 帮助方法 ===================
 
   private formatChapterPlan(plan: ParsedChapterPlan): string {
     return `标题：${plan.title}
@@ -545,7 +601,7 @@ export class AgentCoordinator {
     const totalTime = Date.now() - startTime;
     const agentPerformance: Record<string, { time: number; confidence: number }> = {};
 
-    // Extract agent performance from phases
+    // 从阶段中提取代理性能
     for (const phase of phases) {
       if (phase.output?.metadata) {
         const metadata = phase.output.metadata;
@@ -556,11 +612,11 @@ export class AgentCoordinator {
       }
     }
 
-    // Calculate quality metrics (simplified)
+    // 计算质量指标（简化版）
     const qualityMetrics = {
       coherenceScore: phases.every(p => p.success) ? 90 : 60,
-      integrationScore: phases.find(p => p.phaseName === 'Content Synthesis')?.success ? 85 : 50,
-      polishScore: phases.find(p => p.phaseName === 'Light Polish')?.success ? 80 : 70
+      integrationScore: phases.find(p => p.phaseName === '内容合成')?.success ? 85 : 50,
+      polishScore: phases.find(p => p.phaseName === '轻度润色')?.success ? 80 : 70
     };
 
     return {
@@ -570,30 +626,33 @@ export class AgentCoordinator {
     };
   }
 
-  // =================== REPETITION HELPERS ===================
+  // =================== 重复帮助方法 ===================
 
   private getAlternativePhrase(originalPhrase: string, category: string): string {
-    // Simple alternative phrase replacements for common repetitive patterns
+    // 中文重复检测和替换逻辑
     const alternatives: Record<string, string[]> = {
       'metaphors': [
-        'металлический привкус страха -> горький вкус тревоги',
-        'металлический привкус адреналина -> острый привкус возбуждения',
-        'холодный пот -> ледяная испарина',
-        'дрожь пробежала -> волна дрожи охватила',
-        'сердце забилось -> пульс участился'
+        '心中一紧 -> 心脏猛地收缩',
+        '倒吸一口凉气 -> 呼吸一滞',
+        '心脏猛地收缩 -> 心跳如擂鼓',
+        '呼吸一滞 -> 呼吸困难',
+        '心跳加速 -> 脉搏狂跳'
       ],
       'sensoryDescriptions': [
-        'запах наполнил -> аромат достиг',
-        'звук раздался -> шум прорезал тишину',
-        'холод пронзил -> прохлада коснулась'
+        '刺鼻的血腥味 -> 令人作呕的铁锈味',
+        '铁锈味弥漫 -> 金属气息扑鼻',
+        '血腥气味 -> 腥甜的味道',
+        '寒意袭来 -> 冷风拂面',
+        '震耳欲聋 -> 轰鸣声响起'
       ],
       'emotionalPhrases': [
-        'страх сковал -> тревога охватила',
-        'ужас парализовал -> испуг сковал'
+        '恐惧笼罩 -> 焦虑蔓延',
+        '惊恐万分 -> 心生畏惧',
+        '紧张不安 -> 忐忑不安'
       ]
     };
 
-    // Try to find a direct replacement
+    // 尝试查找直接替换
     const categoryAlts = alternatives[category] || [];
     for (const alt of categoryAlts) {
       const [original, replacement] = alt.split(' -> ');
@@ -602,56 +661,56 @@ export class AgentCoordinator {
       }
     }
 
-    // Fallback: simple variation
-    if (originalPhrase.includes('металлический')) {
-      return originalPhrase.replace('металлический', 'горький');
+    // 后备方案：简单变体
+    if (originalPhrase.includes('心中一紧')) {
+      return originalPhrase.replace('心中一紧', '心脏猛地收缩');
     }
-    if (originalPhrase.includes('холодный')) {
-      return originalPhrase.replace('холодный', 'ледяной');
+    if (originalPhrase.includes('倒吸一口凉气')) {
+      return originalPhrase.replace('倒吸一口凉气', '呼吸一滞');
     }
-    if (originalPhrase.includes('дрожь')) {
-      return originalPhrase.replace('дрожь', 'волна дрожи');
+    if (originalPhrase.includes('刺鼻的血腥味')) {
+      return originalPhrase.replace('刺鼻的血腥味', '令人作呕的铁锈味');
     }
 
-    // Last resort: mark as varied
-    return `${originalPhrase} [варьировано]`;
+    // 最后的手段：标记为已变体
+    return `${originalPhrase} [已变体]`;
   }
 
-  // =================== COORDINATED GENERATION ===================
+  // =================== 协调生成 ===================
 
   private async coordinatedSequentialGeneration(input: ChapterGenerationInput, context: ChapterContext): Promise<any> {
     const sceneType = this.determineSceneType(input.chapterPlan);
 
-    // Initialize Story Context DB for this chapter
+    // 为本章初始化故事上下文数据库
     storyContextDB.initializeChapter(input.chapterNumber, sceneType);
 
-    console.log(`🔄 Starting coordinated sequential generation (${sceneType} scene)`);
+    console.log(`🔄 开始协调顺序生成 (${sceneType} 场景)`);
 
-    // Step 1: Structure Agent with Story Memory Validation
-    console.log('📋 Phase 1: Structure Planning with Story Memory');
+    // 步骤1：带故事记忆验证的结构代理
+    console.log('📋 阶段1: 带故事记忆的结构规划');
     const structureOutput = await this.structureAgentWithValidation(input, context);
 
     if (!structureOutput.success) {
-      throw new Error(`Structure validation failed: ${structureOutput.errors?.join(', ')}`);
+      throw new Error(`结构验证失败: ${structureOutput.errors?.join(', ')}`);
     }
 
-    // Step 2: Character Agent with Content Limits
-    console.log('👥 Phase 2: Character Generation with Content Limits');
+    // 步骤2：带内容限制的角色代理
+    console.log('👥 阶段2: 带内容限制的角色生成');
     const characterOutput = await this.characterAgentWithLimits(structureOutput, input, context);
 
     if (!characterOutput.success) {
-      throw new Error(`Character generation failed: ${characterOutput.errors?.join(', ')}`);
+      throw new Error(`角色生成失败: ${characterOutput.errors?.join(', ')}`);
     }
 
-    // Register character output for tone analysis
+    // 注册角色输出以进行语气分析
     storyContextDB.registerCharacterOutput(characterOutput.content);
 
-    // Step 3: Scene Agent with Tone Awareness
-    console.log('🎬 Phase 3: Scene Generation with Tone Coordination');
+    // 步骤3：带语气感知的场景代理
+    console.log('🎬 阶段3: 带语气协调的场景生成');
     const sceneOutput = await this.sceneAgentWithToneAwareness(structureOutput, characterOutput.content, input, context);
 
     if (!sceneOutput.success) {
-      throw new Error(`Scene generation failed: ${sceneOutput.errors?.join(', ')}`);
+      throw new Error(`场景生成失败: ${sceneOutput.errors?.join(', ')}`);
     }
 
     return {
@@ -668,10 +727,10 @@ export class AgentCoordinator {
   }
 
   private async structureAgentWithValidation(input: ChapterGenerationInput, context: ChapterContext): Promise<any> {
-    // Check for planned revelations in this chapter
+    // 检查本章计划的揭示内容
     const chapterPlan = input.chapterPlan;
 
-    // More intelligent revelation detection - look for specific revelation keywords
+    // 更智能的揭示检测 - 寻找特定的揭示关键词
     const summary = chapterPlan.summary?.toLowerCase() || '';
     const hasSignificantRevelation = (
       summary.includes('major reveal') ||
@@ -682,20 +741,20 @@ export class AgentCoordinator {
     );
 
     if (hasSignificantRevelation) {
-      console.log('🔍 Checking major revelation timing and context...');
+      console.log('🔍 检查重大揭示的时间和上下文...');
 
-      // More nuanced context check - Chapter 1 can have setup revelations, but not major story revelations
+      // 更细致的上下文检查 - 第1章可以有设置性揭示，但不能有重大故事揭示
       const isEarlyChapter = input.chapterNumber <= 2;
       const isSetupRevelation = summary.includes('setup') || summary.includes('introduction') || summary.includes('beginning');
 
       if (isEarlyChapter && !isSetupRevelation) {
-        console.log('⚠️ Major revelation may need more context establishment');
-        // Don't block, just warn - let the generation proceed but note the concern
-        console.log('🔄 Proceeding with generation but flagging for review...');
+        console.log('⚠️ 重大揭示可能需要更多上下文建立');
+        // 不阻止，只警告 - 让生成继续但标记关注点
+        console.log('🔄 继续生成但标记以供审查...');
       }
     }
 
-    // Call original structure agent (would be enhanced with story memory)
+    // 调用原始结构代理（将增强故事记忆）
     try {
       const result = await structureAgent.generate({
         chapterPlan: input.chapterPlan,
@@ -723,10 +782,10 @@ export class AgentCoordinator {
 
   private async characterAgentWithLimits(structureOutput: any, input: ChapterGenerationInput, context: any): Promise<any> {
     try {
-      // Extract character names from the input characters
+      // 从输入角色中提取角色名称
       const activeCharacters = input.characters ? Object.keys(input.characters) : ['protagonist'];
 
-      // Call character agent
+      // 调用角色代理
       const result = await characterAgent.generate({
         chapterPlan: input.chapterPlan,
         chapterNumber: input.chapterNumber,
@@ -754,7 +813,7 @@ export class AgentCoordinator {
           {
             slotId: 'DIALOGUE_1',
             characters: activeCharacters.slice(0, 2),
-            purpose: 'Advance plot',
+            purpose: '推进情节',
             emotionalTone: input.chapterPlan.emotionalToneTension || 'neutral'
           }
         ],
@@ -764,24 +823,24 @@ export class AgentCoordinator {
 
       const content = result.content.characterContent || '';
 
-      // Check content limits
+      // 检查内容限制
       const limitCheck = storyContextDB.checkContentLimits('character', content);
 
       if (!limitCheck.allowed) {
-        console.log(`⚠️ Content limits exceeded: ${limitCheck.reason}`);
+        console.log(`⚠️ 超出内容限制: ${limitCheck.reason}`);
 
-        // Apply automatic corrections based on suggestion
+        // 根据建议应用自动修正
         let correctedContent = content;
 
         if (limitCheck.suggestedAction === 'condense-internal') {
-          // Simple condensation logic
+          // 简单浓缩逻辑
           correctedContent = this.condenseInternalMonologue(content);
-          console.log('🔧 Applied internal monologue condensation');
+          console.log('🔧 应用了内心独白浓缩');
         }
 
         if (limitCheck.suggestedAction === 'add-micro-action') {
           correctedContent = this.insertMicroActions(content);
-          console.log('🔧 Added micro-actions to break up internal blocks');
+          console.log('🔧 添加了微动作以打破内心块');
         }
 
         return {
@@ -808,20 +867,20 @@ export class AgentCoordinator {
 
   private async sceneAgentWithToneAwareness(structureOutput: any, characterContent: string, input: ChapterGenerationInput, context: any): Promise<any> {
     try {
-      // Get tone guidance from Story Context DB
+      // 从故事上下文数据库获取语气指导
       const toneGuidance = storyContextDB.getToneGuidanceForScene();
 
-      console.log(`🎭 Scene adapting to detected tone: ${storyContextDB.getSharedState().currentTone}`);
-      console.log(`📏 Description guidance: ${toneGuidance.descriptionLength}, ${toneGuidance.sentenceStyle}`);
+      console.log(`🎭 场景适应检测到的语气: ${storyContextDB.getSharedState().currentTone}`);
+      console.log(`📏 描述指导: ${toneGuidance.descriptionLength}, ${toneGuidance.sentenceStyle}`);
 
-      // Call scene agent with tone guidance
+      // 使用语气指导调用场景代理
       const result = await sceneAgent.generate({
         chapterPlan: input.chapterPlan,
         chapterNumber: input.chapterNumber,
         context: context.scene || {
           primaryLocation: {
             name: input.chapterPlan.primaryLocation || 'unknown location',
-            description: 'Primary scene location',
+            description: '主要场景位置',
             currentOccupants: [],
             securityLevel: 'neutral' as const,
             changes: []
@@ -854,7 +913,7 @@ export class AgentCoordinator {
       return {
         success: true,
         content: result.content.sceneDescriptions || '',
-        toneAdaptation: `Adapted to ${storyContextDB.getSharedState().currentTone} tone`
+        toneAdaptation: `适应了 ${storyContextDB.getSharedState().currentTone} 语气`
       };
 
     } catch (error: any) {
@@ -867,7 +926,7 @@ export class AgentCoordinator {
 
   private async synthesisWithValidation(input: any): Promise<any> {
     try {
-      // Create compatible output objects for synthesis agent
+      // 为合成代理创建兼容的输出对象
       const structureAgentOutput = {
         chapterStructure: input.structureOutput,
         plotAdvancement: [],
@@ -922,7 +981,7 @@ export class AgentCoordinator {
         }
       };
 
-      // First, run normal synthesis
+      // 首先，运行正常合成
       const synthesisResult = await synthesisAgent.integrate({
         structureOutput: structureAgentOutput,
         characterOutput: characterAgentOutput,
@@ -933,28 +992,28 @@ export class AgentCoordinator {
 
       let finalContent = synthesisResult.integratedChapter;
 
-      // Then, run macro validation
+      // 然后，运行宏观验证
       const balanceReport = input.balanceReport;
 
       if (balanceReport.issues.length > 0) {
-        console.log(`⚠️ Balance issues detected:`, balanceReport.issues.map(i => i.type));
+        console.log(`⚠️ 检测到平衡问题:`, balanceReport.issues.map(i => i.type));
 
-        // Apply automatic corrections
+        // 应用自动修正
         for (const issue of balanceReport.issues) {
           switch (issue.type) {
             case 'description-overload':
               finalContent = this.reduceDescriptionDensity(finalContent);
-              console.log('🔧 Reduced description density');
+              console.log('🔧 降低了描述密度');
               break;
 
             case 'internal-overload':
               finalContent = this.breakUpInternalMonologue(finalContent);
-              console.log('🔧 Broke up internal monologue blocks');
+              console.log('🔧 分解了内心独白块');
               break;
 
             case 'consecutive-description':
               finalContent = this.insertActionBeats(finalContent);
-              console.log('🔧 Inserted action beats between descriptions');
+              console.log('🔧 在描述之间插入了动作节奏');
               break;
           }
         }
@@ -971,15 +1030,19 @@ export class AgentCoordinator {
     }
   }
 
-  // =================== CONTENT CORRECTION HELPERS ===================
+  // =================== 内容修正帮助方法 ===================
 
   private determineSceneType(chapterPlan: any): SharedChapterState['sceneType'] {
     const summary = chapterPlan.summary?.toLowerCase() || '';
 
-    if (summary.includes('fight') || summary.includes('battle') || summary.includes('chase')) {
+    // 中文关键词识别 - 动作场景
+    if (summary.includes('fight') || summary.includes('battle') || summary.includes('chase') ||
+        summary.includes('打脸') || summary.includes('突破') || summary.includes('渡劫')) {
       return 'action';
     }
-    if (summary.includes('reveal') || summary.includes('truth') || summary.includes('discover')) {
+    // 中文关键词识别 - 揭示场景
+    if (summary.includes('reveal') || summary.includes('truth') || summary.includes('discover') ||
+        summary.includes('拍卖会')) {
       return 'revelation';
     }
     if (summary.includes('emotion') || summary.includes('feel') || summary.includes('remember')) {
@@ -993,7 +1056,7 @@ export class AgentCoordinator {
   }
 
   private condenseInternalMonologue(content: string): string {
-    // Simple condensation: find long internal blocks and shorten them
+    // 简单浓缩：查找长内心块并缩短它们
     return content.replace(/(\[INTERNAL[^\]]*\][^[]{200,})/g, (match) => {
       const words = match.split(/\s+/);
       if (words.length > 50) {
@@ -1004,13 +1067,13 @@ export class AgentCoordinator {
   }
 
   private insertMicroActions(content: string): string {
-    // Insert micro-actions between internal blocks
+    // 在内心块之间插入微动作
     const microActions = [
-      'She shifted in her seat.',
-      'He took a breath.',
-      'Her gaze dropped.',
-      'He clenched his fist.',
-      'She looked away.'
+      '她调整了一下坐姿。',
+      '他深吸了一口气。',
+      '目光低垂。',
+      '他握紧了拳头。',
+      '她移开了视线。'
     ];
 
     let actionIndex = 0;
@@ -1022,36 +1085,37 @@ export class AgentCoordinator {
   }
 
   private reduceDescriptionDensity(content: string): string {
-    // Remove excessive adjectives and sensory details
-    return content.replace(/(\w+),\s*(\w+),\s*(\w+)\s*(smell|sound|taste|feel)/g, '$4');
+    // 移除过多的形容词和感官细节 - 适配中文标点和句子结构
+    // 匹配多个形容词修饰的感官描述，如"刺鼻的、令人作呕的、血腥的味道"，简化为"味道"
+    return content.replace(/([的，,]*[^\s，,]+[的，,]*[^\s，,]+[的，,]*[^\s，,]+)\s*(气味|声音|味道|感觉|气息|响声|滋味|触感)/g, '$2');
   }
 
   private breakUpInternalMonologue(content: string): string {
-    // Similar to insertMicroActions but for final content
+    // 与insertMicroActions类似，但用于最终内容
     return this.insertMicroActions(content);
   }
 
   private insertActionBeats(content: string): string {
-    // Insert physical actions between long description blocks
+    // 在长描述块之间插入物理动作
     const actionBeats = [
-      'She moved closer.',
-      'He scanned the room.',
-      'The moment stretched.',
-      'Something shifted.'
+      '她凑近了一些。',
+      '他环视四周。',
+      '时间仿佛凝固了。',
+      '气氛有些微妙的变化。'
     ];
 
-    // This would be more sophisticated in real implementation
-    return content.replace(/(\.)\s*([A-Z][^.]{100,}\.)\s*([A-Z][^.]{100,}\.)/g, (match, end1, desc1, desc2) => {
+    // 适配中文句子结构，在连续的长描述段落之间插入动作节奏点
+    return content.replace(/([。])\s*([^。]{100,}[。])\s*([^。]{100,}[。])/g, (match, end1, desc1, desc2) => {
       const beat = actionBeats[Math.floor(Math.random() * actionBeats.length)];
-      return `${end1} ${desc1}\n\n${beat}\n\n${desc2}`;
+      return `${end1}${desc1}\n\n${beat}\n\n${desc2}`;
     });
   }
 
-  // =================== CONFIGURATION ===================
+  // =================== 配置 ===================
 
   updateOptions(newOptions: Partial<GenerationOptions>): void {
     this.options = { ...this.options, ...newOptions };
-    console.log('📝 Agent coordinator options updated:', this.options);
+    console.log('📝 代理协调器选项已更新:', this.options);
   }
 
   getOptions(): GenerationOptions {
@@ -1059,6 +1123,6 @@ export class AgentCoordinator {
   }
 }
 
-// =================== EXPORT ===================
+// =================== 导出 ===================
 
 export const agentCoordinator = new AgentCoordinator();

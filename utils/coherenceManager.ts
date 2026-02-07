@@ -15,6 +15,15 @@ export interface RepetitionIssue {
   severity: 'low' | 'medium' | 'high';
 }
 
+// 中文分类名称映射
+export const REPETITION_CATEGORY_NAMES: Record<RepetitionIssue['category'], string> = {
+  metaphors: '比喻',
+  sensoryDescriptions: '感官描述',
+  emotionalPhrases: '情感短语',
+  characterActions: '角色动作',
+  worldDescriptions: '世界描述'
+};
+
 export interface RepetitionReport {
   chapterNumber: number;
   issues: RepetitionIssue[];
@@ -361,7 +370,7 @@ export class CoherenceManager {
   private initializeCharacters(characters: Record<string, Character>): void {
     for (const [name, character] of Object.entries(characters)) {
       this.storyCoherence.characterStates[name] = {
-        location: 'unknown',
+        location: '未知',
         relationships: {},
         emotionalState: {
           primaryEmotion: 'neutral',
@@ -388,12 +397,12 @@ export class CoherenceManager {
     // Basic plot thread extraction - can be enhanced with AI analysis
     const mainThread: PlotThread = {
       id: 'main-plot',
-      title: 'Main Story Arc',
-      description: 'Primary narrative thread',
+      title: '主线故事',
+      description: '主要叙事线索',
       status: 'active',
       priority: 'primary',
       nextMilestone: {
-        description: 'First major plot point',
+        description: '第一个主要情节点',
         prerequisites: [],
         consequences: []
       },
@@ -468,8 +477,8 @@ export class CoherenceManager {
     // This would be enhanced with location tracking
     return {
       primaryLocation: {
-        name: 'Current Setting',
-        description: 'Main location for this chapter',
+        name: '当前场景',
+        description: '本章的主要地点',
         currentOccupants: [],
         securityLevel: 'neutral',
         changes: []
@@ -516,7 +525,7 @@ export class CoherenceManager {
     // Add to timeline
     const event: TimelineEvent = {
       chapter: chapterNumber,
-      description: chapterData.summary || 'Chapter events',
+      description: chapterData.summary || '章节事件',
       type: 'action',
       impact: 'local',
       consequences: []
@@ -564,7 +573,7 @@ export class CoherenceManager {
   private validatePlotThreads(issues: string[], warnings: string[]): void {
     for (const thread of Object.values(this.storyCoherence.plotThreads)) {
       if (thread.status === 'active' && !thread.nextMilestone) {
-        warnings.push(`Plot thread "${thread.title}" is active but has no next milestone`);
+        warnings.push(`剧情线索 "${thread.title}" 处于活跃状态但没有下一个里程碑`);
       }
     }
   }
@@ -711,10 +720,10 @@ export class CoherenceManager {
       maxSimilarMetaphors: 1,
       maxSensoryOverload: 2, // Max 2 sensory descriptions per paragraph
       guidelines: [
-        'Avoid repeating exact metaphors from recent chapters',
-        'Vary sensory descriptions (don\'t stack smell + sound + touch)',
-        'Use fresh emotional language, avoid clichés',
-        'If you must use similar concepts, find new ways to express them'
+        '避免在最近章节中重复相同的比喻',
+        '变换感官描述，避免同时堆砌气味、声音和触觉',
+        '使用新鲜的情感表达，避免使用陈词滥调',
+        '如果必须使用相似概念，请寻找新的表达方式'
       ]
     };
   }

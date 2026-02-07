@@ -6,13 +6,12 @@
 // =================== INTERFACES ===================
 
 export interface QualityAnalysis {
-  emotionalCurve: EmotionalCurveAnalysis;
-  pacing: PacingAnalysis;
-  repetition: RepetitionAnalysis;
-  showVsTell: ShowVsTellAnalysis;
-  revelation: RevelationAnalysis;
-  stakes: StakesAnalysis;
-  microDetails: MicroDetailsAnalysis;
+  audit: AuditAnalysis;                    // 网文审核分析
+  waterInjection: WaterInjectionAnalysis;   // 水文检测分析
+  goldenThree: GoldenThreeAnalysis;         // 黄金三章分析
+  emotionalCurve: EmotionalCurveAnalysis;   // 情感曲线分析
+  pacing: PacingAnalysis;                   // 节奏分析
+  stakes: StakesAnalysis;                   // 利益相关分析
   overallScore: number;
   recommendations: QualityRecommendation[];
 }
@@ -73,8 +72,33 @@ export interface MicroDetailsAnalysis {
   balance: 'appropriate' | 'too-mundane' | 'too-sparse';
 }
 
+export interface AuditAnalysis {
+  sensitiveWords: Array<{ word: string; category: 'political' | 'erotic' | 'violent' | 'forbidden' }>;
+  crabRisk: { level: 'low' | 'medium' | 'high' | 'critical'; reasons: string[] };
+  isSafe: boolean;
+  violations: string[];
+}
+
+export interface WaterInjectionAnalysis {
+  meaninglessRepetitions: Array<{ pattern: string; count: number; severity: 'low' | 'medium' | 'high' }>;
+  adjectiveHell: { count: number; density: number; isExcessive: boolean };
+  totalWaterWords: number;
+  waterPercentage: number;
+  needsTrim: boolean;
+}
+
+export interface GoldenThreeAnalysis {
+  hasSystemCheat: boolean;
+  systemCheatPosition: number; // 章节位置
+  hasConflictHate: boolean;
+  conflictIntensity: number; // 1-10 冲突强度
+  hateLevel: number; // 拉仇恨程度 1-10
+  isGoldenStandard: boolean;
+  issues: string[];
+}
+
 export interface QualityRecommendation {
-  category: 'emotional' | 'pacing' | 'repetition' | 'show-tell' | 'revelation' | 'stakes' | 'details';
+  category: 'audit' | 'water' | 'golden-three' | 'emotional' | 'pacing' | 'stakes';
   severity: 'low' | 'medium' | 'high' | 'critical';
   issue: string;
   solution: string;
@@ -85,80 +109,105 @@ export interface QualityRecommendation {
 
 export class QualityController {
   private readonly OVERUSED_THRESHOLD = 3;
-  private readonly CLICHE_DATABASE = [
-    { phrase: 'teeth ache', category: 'sensory-cliche' },
-    { phrase: 'knot in stomach', category: 'emotion-cliche' },
-    { phrase: 'breath hitched', category: 'reaction-cliche' },
-    { phrase: 'silence hung heavy', category: 'atmosphere-cliche' },
-    { phrase: 'heart skipped a beat', category: 'emotion-cliche' },
-    { phrase: 'blood ran cold', category: 'fear-cliche' },
-    { phrase: 'time stood still', category: 'time-cliche' }
-  ];
 
-  private readonly TELL_PATTERNS = [
-    /\b(she|he|they) felt (\w+)/gi,
-    /\b(she|he|they) looked (\w+)/gi,
-    /\b(she|he|they) seemed (\w+)/gi,
-    /\b(she|he|they) appeared (\w+)/gi,
-    /\bfelt (betrayed|confused|angry|sad|happy|excited)/gi,
-    /\ba (profound|deep|overwhelming) (feeling|sense) of/gi
-  ];
-
-  private readonly EMOTION_TO_PHYSICAL = {
-    'betrayed': ['Her hands trembled', 'She couldn\'t meet his eyes', 'Her voice cracked'],
-    'confused': ['She blinked slowly', 'Her forehead creased', 'She tilted her head'],
-    'angry': ['Her jaw clenched', 'Her fists went white', 'Heat flushed her cheeks'],
-    'sad': ['Her shoulders sagged', 'She looked away', 'Her throat tightened'],
-    'excited': ['She leaned forward', 'Her eyes widened', 'She spoke faster'],
-    'afraid': ['She stepped back', 'Her breath quickened', 'Cold sweat beaded her forehead']
+  // =================== 网文审核敏感词库 ===================
+  private readonly SENSITIVE_WORDS = {
+    political: [
+      '政治', '政府', '共产党', '习近平', '领导人', '党中央', '国家主席',
+      '维稳', '上访', '抗议', '示威', '游行', '集会', '请愿'
+    ],
+    erotic: [
+      '性', '裸', '乳', '臀', '阴', '茎', '插', '舔', '舐', '吸', '吮',
+      '高潮', '射', '精', '液', '春药', '媚药', '催情', '处女', '破处'
+    ],
+    violent: [
+      '血腥', '暴力', '杀戮', '屠杀', '虐杀', '肢解', '分尸', '碎尸', '碎尸万段',
+      '酷刑', '折磨', '凌辱', '奸杀', '强奸', '轮奸', '群奸'
+    ],
+    forbidden: [
+      '河蟹', '和谐', '删帖', '封号', '禁言', '屏蔽', '敏感词', '关键词',
+      '审查', '删书', '封书', '下架', '禁书', '404'
+    ]
   };
 
-  private readonly WORD_ALTERNATIVES = {
-    'settled': ['sank', 'descended', 'lodged', 'nestled', 'anchored', 'rooted'],
-    'heavy': ['oppressive', 'dense', 'crushing', 'thick', 'weighty', 'burdensome'],
-    'sharp': ['keen', 'piercing', 'cutting', 'acute', 'jagged', 'biting'],
-    'cold': ['icy', 'frigid', 'chilled', 'frozen', 'arctic', 'bitter']
+  // =================== 水文检测模式 ===================
+  private readonly WATER_PATTERNS = {
+    meaningless: [
+      /啊{3,}/g, // 啊啊啊啊
+      /嗯{3,}/g, // 嗯嗯嗯嗯
+      /哦{3,}/g, // 哦哦哦哦
+      /嘿{3,}/g, // 嘿嘿嘿嘿
+      /呵{3,}/g, // 呵呵呵呵
+      /哈{3,}/g, // 哈哈哈哈
+      /嘻{3,}/g, // 嘻嘻嘻嘻
+      /嘿{3,}/g  // 嘿嘿嘿嘿
+    ],
+    adjectiveHell: [
+      /\b(美丽|漂亮|帅气|英俊|可爱|温柔|善良|邪恶|凶狠|可怕|恐怖|黑暗|光明|洁白|漆黑|鲜红|血红|湛蓝|蔚蓝|翠绿|碧绿|金黄|银白|晶莹|璀璨|辉煌|耀眼|阴森|诡异|神秘|神奇|玄妙|深邃|宽阔|狭窄|高大|矮小|肥胖|瘦弱|强壮|虚弱|年轻|年老|苍老|稚嫩|成熟|稚气){2,}\b/g, // 形容词堆砌
+      /\b(无比|非常|特别|十分|极其|超级|超级|超级|相当|格外|分外|异常|尤为|尤其|特别|尤其|极其|极为|万分|十分|十分|百般|千般|万般){2,}\b/g  // 程度副词堆砌
+    ]
+  };
+
+  // =================== 黄金三章检测模式 ===================
+  private readonly GOLDEN_THREE_PATTERNS = {
+    systemCheat: [
+      /系统/g, /金手指/g, /作弊/g, /外挂/g, /绑定/g, /升级/g, /属性/g,
+      /技能/g, /等级/g, /经验/g, /任务/g, /奖励/g, /商城/g, /抽奖/g
+    ],
+    conflictHate: [
+      /退婚/g, /悔婚/g, /休妻/g, /休夫/g, /离婚/g, /分手/g, /抛弃/g,
+      /羞辱/g, /侮辱/g, /嘲笑/g, /讥讽/g, /奚落/g, /打脸/g, /打压/g,
+      /针对/g, /陷害/g, /阴谋/g, /算计/g, /背叛/g, /出轨/g
+    ]
+  };
+
+  // =================== 中文自动修正映射 ===================
+  private readonly CHINESE_EMOTION_TO_ACTION = {
+    '生气': ['额头青筋暴起', '茶杯被捏得粉碎', '牙齿咬得咯咯作响', '拳头紧紧握住'],
+    '愤怒': ['眼中燃烧着怒火', '声音提高八度', '桌子被拍得砰砰响', '呼吸变得急促'],
+    '开心': ['嘴角上扬', '眼睛弯成月牙', '笑声回荡在房间', '脚步变得轻快'],
+    '悲伤': ['泪水在眼眶打转', '肩膀微微颤抖', '声音变得沙哑', '低下头不愿让人看见'],
+    '恐惧': ['身体不由自主后退', '心脏狂跳不止', '冷汗从额头渗出', '声音颤抖着'],
+    '惊讶': ['眼睛瞪大', '嘴巴微微张开', '身体僵硬', '呼吸一滞'],
+    '失望': ['眼神黯淡下来', '叹了口气', '肩膀垮了下来', '无力地靠在椅子上'],
+    '兴奋': ['两眼放光', '手舞足蹈', '声音高亢', '坐立不安']
   };
 
   // =================== MAIN ANALYSIS METHOD ===================
 
-  analyzeChapter(content: string, chapterType: 'action' | 'emotional' | 'revelation' | 'setup'): QualityAnalysis {
+  analyzeChapter(content: string, chapterType: 'action' | 'emotional' | 'revelation' | 'setup', chapterNumber?: number): QualityAnalysis {
+    const audit = this.analyzeAudit(content);
+    const waterInjection = this.analyzeWaterInjection(content);
+    const goldenThree = this.analyzeGoldenThree(content, chapterNumber);
     const emotionalCurve = this.analyzeEmotionalCurve(content);
     const pacing = this.analyzePacing(content, chapterType);
-    const repetition = this.analyzeRepetition(content);
-    const showVsTell = this.analyzeShowVsTell(content);
-    const revelation = this.analyzeRevelation(content);
     const stakes = this.analyzeStakes(content);
-    const microDetails = this.analyzeMicroDetails(content, chapterType);
 
     const overallScore = this.calculateOverallScore({
+      audit,
+      waterInjection,
+      goldenThree,
       emotionalCurve,
       pacing,
-      repetition,
-      showVsTell,
-      revelation,
-      stakes,
-      microDetails
+      stakes
     });
 
     const recommendations = this.generateRecommendations({
+      audit,
+      waterInjection,
+      goldenThree,
       emotionalCurve,
       pacing,
-      repetition,
-      showVsTell,
-      revelation,
-      stakes,
-      microDetails
+      stakes
     });
 
     return {
+      audit,
+      waterInjection,
+      goldenThree,
       emotionalCurve,
       pacing,
-      repetition,
-      showVsTell,
-      revelation,
       stakes,
-      microDetails,
       overallScore,
       recommendations
     };
@@ -229,6 +278,252 @@ export class QualityController {
     return Math.max(1, Math.min(10, intensity));
   }
 
+  // =================== 网文审核分析 ===================
+
+  private analyzeAudit(content: string): AuditAnalysis {
+    const sensitiveWords: Array<{ word: string; category: 'political' | 'erotic' | 'violent' | 'forbidden' }> = [];
+    const violations: string[] = [];
+
+    // 检测敏感词
+    Object.entries(this.SENSITIVE_WORDS).forEach(([category, words]) => {
+      words.forEach(word => {
+        const regex = new RegExp(word, 'g');
+        const matches = content.match(regex);
+        if (matches) {
+          matches.forEach(() => {
+            sensitiveWords.push({
+              word,
+              category: category as 'political' | 'erotic' | 'violent' | 'forbidden'
+            });
+          });
+        }
+      });
+    });
+
+    // 计算河蟹风险
+    const crabRisk = this.calculateCrabRisk(sensitiveWords, content);
+
+    // 生成违规记录
+    sensitiveWords.forEach(({ word, category }) => {
+      let violationMsg = '';
+      switch (category) {
+        case 'political':
+          violationMsg = `检测到政治敏感词"${word}"，可能导致封书`;
+          break;
+        case 'erotic':
+          violationMsg = `检测到色情内容"${word}"，违反平台规定`;
+          break;
+        case 'violent':
+          violationMsg = `检测到血腥暴力"${word}"，内容过于极端`;
+          break;
+        case 'forbidden':
+          violationMsg = `检测到禁忌词"${word}"，直接触发河蟹机制`;
+          break;
+      }
+      violations.push(violationMsg);
+    });
+
+    return {
+      sensitiveWords,
+      crabRisk,
+      isSafe: crabRisk.level === 'low',
+      violations
+    };
+  }
+
+  private calculateCrabRisk(sensitiveWords: Array<{ word: string; category: string }>, content: string): { level: 'low' | 'medium' | 'high' | 'critical'; reasons: string[] } {
+    const reasons: string[] = [];
+    let riskScore = 0;
+
+    // 敏感词数量和类型评分
+    const politicalCount = sensitiveWords.filter(w => w.category === 'political').length;
+    const eroticCount = sensitiveWords.filter(w => w.category === 'erotic').length;
+    const violentCount = sensitiveWords.filter(w => w.category === 'violent').length;
+    const forbiddenCount = sensitiveWords.filter(w => w.category === 'forbidden').length;
+
+    riskScore += politicalCount * 5; // 政治敏感最高风险
+    riskScore += eroticCount * 4;    // 色情内容高风险
+    riskScore += violentCount * 3;   // 暴力内容中等风险
+    riskScore += forbiddenCount * 10; // 禁忌词直接高风险
+
+    // 内容长度风险（太短可能被认为是测试内容）
+    const wordCount = content.split(/\s+/).length;
+    if (wordCount < 100) {
+      riskScore += 2;
+      reasons.push('章节过短，可能被视为测试内容');
+    }
+
+    // 重复敏感词风险
+    const uniqueWords = new Set(sensitiveWords.map(w => w.word));
+    if (uniqueWords.size < sensitiveWords.length) {
+      riskScore += 3;
+      reasons.push('存在重复敏感词');
+    }
+
+    // 确定风险等级
+    let level: 'low' | 'medium' | 'high' | 'critical';
+    if (riskScore >= 15) {
+      level = 'critical';
+      reasons.push('综合风险极高，可能立即封书');
+    } else if (riskScore >= 10) {
+      level = 'high';
+      reasons.push('高风险内容，建议修改');
+    } else if (riskScore >= 5) {
+      level = 'medium';
+      reasons.push('中等风险，需要注意');
+    } else {
+      level = 'low';
+      reasons.push('风险较低，相对安全');
+    }
+
+    return { level, reasons };
+  }
+
+  // =================== 水文检测分析 ===================
+
+  private analyzeWaterInjection(content: string): WaterInjectionAnalysis {
+    const meaninglessRepetitions: Array<{ pattern: string; count: number; severity: 'low' | 'medium' | 'high' }> = [];
+
+    // 检测无意义重复
+    Object.entries(this.WATER_PATTERNS.meaningless).forEach(([key, regex]) => {
+      const matches = content.match(regex) || [];
+      if (matches.length > 0) {
+        const totalLength = matches.join('').length;
+        let severity: 'low' | 'medium' | 'high' = 'low';
+        if (totalLength > 20) severity = 'high';
+        else if (totalLength > 10) severity = 'medium';
+
+        meaninglessRepetitions.push({
+          pattern: key,
+          count: matches.length,
+          severity
+        });
+      }
+    });
+
+    // 检测形容词地狱
+    const adjectiveHellMatches = [];
+    this.WATER_PATTERNS.adjectiveHell.forEach(regex => {
+      const matches = content.match(regex) || [];
+      adjectiveHellMatches.push(...matches);
+    });
+
+    const totalWords = content.split(/\s+/).length;
+    const adjectiveCount = adjectiveHellMatches.length;
+    const adjectiveDensity = totalWords > 0 ? (adjectiveCount / totalWords) * 100 : 0;
+    const isExcessive = adjectiveDensity > 5 || adjectiveCount > 10; // 形容词密度超过5%或数量超过10个
+
+    // 计算总水文字数
+    const waterWords = meaninglessRepetitions.reduce((sum, rep) => sum + rep.count, 0) +
+                      (isExcessive ? adjectiveCount * 2 : 0); // 形容词地狱算双倍水文
+    const waterPercentage = totalWords > 0 ? (waterWords / totalWords) * 100 : 0;
+
+    return {
+      meaninglessRepetitions,
+      adjectiveHell: {
+        count: adjectiveCount,
+        density: adjectiveDensity,
+        isExcessive
+      },
+      totalWaterWords: waterWords,
+      waterPercentage,
+      needsTrim: waterPercentage > 10 // 水文占比超过10%需要删减
+    };
+  }
+
+  // =================== 黄金三章检测分析 ===================
+
+  private analyzeGoldenThree(content: string, chapterNumber?: number): GoldenThreeAnalysis {
+    const issues: string[] = [];
+    let hasSystemCheat = false;
+    let systemCheatPosition = 0;
+    let hasConflictHate = false;
+    let conflictIntensity = 0;
+    let hateLevel = 0;
+
+    // 检测金手指/系统（主要针对第一章）
+    if (chapterNumber === 1 || chapterNumber === undefined) {
+      const systemMatches = this.GOLDEN_THREE_PATTERNS.systemCheat.filter(pattern => {
+        return pattern.test(content);
+      });
+
+      hasSystemCheat = systemMatches.length > 0;
+      if (hasSystemCheat) {
+        // 找到系统元素首次出现的位置
+        const words = content.split(/\s+/);
+        for (let i = 0; i < words.length; i++) {
+          if (this.GOLDEN_THREE_PATTERNS.systemCheat.some(pattern =>
+            pattern.test(words[i])
+          )) {
+            systemCheatPosition = (i / words.length) * 100; // 百分比位置
+            break;
+          }
+        }
+        issues.push('第一章出现金手指/系统元素，建议控制节奏');
+      }
+    }
+
+    // 检测冲突/拉仇恨（针对前三章）
+    if (chapterNumber && chapterNumber <= 3) {
+      const conflictMatches = this.GOLDEN_THREE_PATTERNS.conflictHate.filter(pattern => {
+        return pattern.test(content);
+      });
+
+      hasConflictHate = conflictMatches.length > 0;
+      if (hasConflictHate) {
+        conflictIntensity = Math.min(10, conflictMatches.length * 2);
+        hateLevel = this.calculateHateLevel(content);
+
+        if (conflictIntensity < 3) {
+          issues.push('前三章冲突不足，难以吸引读者');
+        } else if (conflictIntensity > 8) {
+          issues.push('前三章冲突过强，可能吓跑读者');
+        }
+      } else {
+        issues.push('前三章缺乏明显冲突/拉仇恨元素');
+      }
+    }
+
+    // 判断是否符合黄金三章标准
+    const isGoldenStandard = (chapterNumber === 1 && hasSystemCheat) ||
+                           (chapterNumber && chapterNumber <= 3 && hasConflictHate && conflictIntensity >= 3 && conflictIntensity <= 8);
+
+    return {
+      hasSystemCheat,
+      systemCheatPosition,
+      hasConflictHate,
+      conflictIntensity,
+      hateLevel,
+      isGoldenStandard,
+      issues
+    };
+  }
+
+  private calculateHateLevel(content: string): number {
+    let hateScore = 0;
+
+    // 检测各种拉仇恨元素
+    const hateIndicators = [
+      { pattern: /羞辱|侮辱|嘲笑|讥讽/g, weight: 3 },
+      { pattern: /打脸|打压|针对|陷害/g, weight: 4 },
+      { pattern: /阴谋|算计|背叛|出轨/g, weight: 5 },
+      { pattern: /退婚|悔婚|休妻|休夫/g, weight: 6 },
+      { pattern: /离婚|分手|抛弃/g, weight: 4 }
+    ];
+
+    hateIndicators.forEach(({ pattern, weight }) => {
+      const matches = content.match(pattern) || [];
+      hateScore += matches.length * weight;
+    });
+
+    // 检测情感强度词
+    const emotionWords = /气愤|愤怒|憎恨|怨恨|嫉妒|羡慕/g;
+    const emotionMatches = content.match(emotionWords) || [];
+    hateScore += emotionMatches.length * 2;
+
+    return Math.min(10, Math.max(0, hateScore));
+  }
+
   // =================== PACING ANALYSIS ===================
 
   private analyzePacing(content: string, sceneType: 'action' | 'emotional' | 'revelation' | 'setup'): PacingAnalysis {
@@ -263,96 +558,6 @@ export class QualityController {
     };
   }
 
-  // =================== REPETITION ANALYSIS ===================
-
-  private analyzeRepetition(content: string): RepetitionAnalysis {
-    const words = content.toLowerCase().match(/\b\w+\b/g) || [];
-    const wordCounts = words.reduce((acc, word) => {
-      acc[word] = (acc[word] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    // Find overused words
-    const overusedWords = Object.entries(wordCounts)
-      .filter(([word, count]) => count >= this.OVERUSED_THRESHOLD && word.length > 3)
-      .map(([word, count]) => ({
-        word,
-        count,
-        severity: count >= 8 ? 'high' : count >= 5 ? 'medium' : 'low' as const
-      }))
-      .sort((a, b) => b.count - a.count);
-
-    // Check for cliches
-    const cliches = this.CLICHE_DATABASE.filter(cliche =>
-      content.toLowerCase().includes(cliche.phrase.toLowerCase())
-    );
-
-    // Check repetitive patterns
-    const patterns = [
-      { pattern: 'Her [body part] [action]', regex: /Her \w+ \w+/g },
-      { pattern: 'A [noun] [verbed]', regex: /A \w+ \w+ed/g },
-      { pattern: '[Something] settled', regex: /\w+ settled/g }
-    ];
-
-    const repetitivePatterns = patterns.map(p => ({
-      pattern: p.pattern,
-      count: (content.match(p.regex) || []).length
-    })).filter(p => p.count >= 3);
-
-    return {
-      overusedWords,
-      repetitivePatterns,
-      cliches,
-      needsVariation: overusedWords.length > 0 || cliches.length > 0 || repetitivePatterns.length > 0
-    };
-  }
-
-  // =================== SHOW VS TELL ANALYSIS ===================
-
-  private analyzeShowVsTell(content: string): ShowVsTellAnalysis {
-    let tellCount = 0;
-    const problematicPhrases: Array<{ phrase: string; type: 'emotion-tell' | 'appearance-tell' | 'state-tell' }> = [];
-
-    this.TELL_PATTERNS.forEach(pattern => {
-      const matches = content.match(pattern) || [];
-      matches.forEach(match => {
-        tellCount++;
-        problematicPhrases.push({
-          phrase: match,
-          type: this.categorizeTeLL(match)
-        });
-      });
-    });
-
-    // Rough estimate of "show" instances (physical actions, dialogue, sensory details)
-    const showPatterns = [
-      /\b(clenched|trembled|widened|narrowed|tightened)\b/g,
-      /"[^"]+"/g, // dialogue
-      /\b(smell|taste|sound|feel|touch)\b/g
-    ];
-
-    let showCount = 0;
-    showPatterns.forEach(pattern => {
-      showCount += (content.match(pattern) || []).length;
-    });
-
-    const ratio = showCount / Math.max(tellCount, 1);
-    const needsConversion = ratio < 2; // should have at least 2 shows per tell
-
-    return {
-      tellCount,
-      showCount,
-      ratio,
-      problematicPhrases,
-      needsConversion
-    };
-  }
-
-  private categorizeTeLL(phrase: string): 'emotion-tell' | 'appearance-tell' | 'state-tell' {
-    if (phrase.match(/felt|feeling/)) return 'emotion-tell';
-    if (phrase.match(/looked|appeared|seemed/)) return 'appearance-tell';
-    return 'state-tell';
-  }
 
   // =================== REVELATION ANALYSIS ===================
 
@@ -486,15 +691,38 @@ export class QualityController {
   // =================== SCORING AND RECOMMENDATIONS ===================
 
   private calculateOverallScore(analysis: {
+    audit: AuditAnalysis;
+    waterInjection: WaterInjectionAnalysis;
+    goldenThree: GoldenThreeAnalysis;
     emotionalCurve: EmotionalCurveAnalysis;
     pacing: PacingAnalysis;
-    repetition: RepetitionAnalysis;
-    showVsTell: ShowVsTellAnalysis;
-    revelation: RevelationAnalysis;
     stakes: StakesAnalysis;
-    microDetails: MicroDetailsAnalysis;
   }): number {
     let score = 100;
+
+    // 网文审核处罚（最高优先级）
+    if (!analysis.audit.isSafe) {
+      const riskMultiplier = analysis.audit.crabRisk.level === 'critical' ? 4 :
+                            analysis.audit.crabRisk.level === 'high' ? 3 :
+                            analysis.audit.crabRisk.level === 'medium' ? 2 : 1;
+      score -= analysis.audit.violations.length * 5 * riskMultiplier;
+    }
+
+    // 水文检测处罚
+    if (analysis.waterInjection.needsTrim) {
+      score -= Math.floor(analysis.waterInjection.waterPercentage * 2); // 水文占比每1%扣2分
+    }
+    score -= analysis.waterInjection.meaninglessRepetitions.length * 3;
+    if (analysis.waterInjection.adjectiveHell.isExcessive) {
+      score -= 10;
+    }
+
+    // 黄金三章加分/扣分
+    if (analysis.goldenThree.isGoldenStandard) {
+      score += 20; // 符合黄金三章标准加分
+    } else {
+      score -= analysis.goldenThree.issues.length * 5;
+    }
 
     // Emotional curve penalties
     if (!analysis.emotionalCurve.hasClimax) score -= 15;
@@ -504,46 +732,78 @@ export class QualityController {
     // Pacing penalties
     if (!analysis.pacing.pacingMatch) score -= 10;
 
-    // Repetition penalties
-    score -= analysis.repetition.overusedWords.length * 2;
-    score -= analysis.repetition.cliches.length * 3;
-
-    // Show vs Tell penalties
-    if (analysis.showVsTell.needsConversion) score -= 15;
-
-    // Revelation penalties
-    if (analysis.revelation.hasRevelation && analysis.revelation.issues.length > 0) {
-      score -= analysis.revelation.issues.length * 5;
-    }
-
     // Stakes penalties
     if (!analysis.stakes.areStakesClear) score -= 10;
     if (!analysis.stakes.playerAgency) score -= 8;
-
-    // Details penalties
-    if (!analysis.microDetails.contextRelevant) score -= 5;
 
     return Math.max(0, score);
   }
 
   private generateRecommendations(analysis: {
+    audit: AuditAnalysis;
+    waterInjection: WaterInjectionAnalysis;
+    goldenThree: GoldenThreeAnalysis;
     emotionalCurve: EmotionalCurveAnalysis;
     pacing: PacingAnalysis;
-    repetition: RepetitionAnalysis;
-    showVsTell: ShowVsTellAnalysis;
-    revelation: RevelationAnalysis;
     stakes: StakesAnalysis;
-    microDetails: MicroDetailsAnalysis;
   }): QualityRecommendation[] {
     const recommendations: QualityRecommendation[] = [];
+
+    // 网文审核推荐
+    if (!analysis.audit.isSafe) {
+      analysis.audit.violations.forEach(violation => {
+        recommendations.push({
+          category: 'audit',
+          severity: analysis.audit.crabRisk.level === 'critical' ? 'critical' :
+                   analysis.audit.crabRisk.level === 'high' ? 'high' : 'medium',
+          issue: violation,
+          solution: '立即删除或修改敏感内容，避免封书风险',
+          autoFixable: false
+        });
+      });
+    }
+
+    // 水文检测推荐
+    if (analysis.waterInjection.needsTrim) {
+      recommendations.push({
+        category: 'water',
+        severity: analysis.waterInjection.waterPercentage > 20 ? 'high' : 'medium',
+        issue: `水文占比${analysis.waterInjection.waterPercentage.toFixed(1)}%，超过10%阈值`,
+        solution: '删除无意义重复和过度形容词堆砌',
+        autoFixable: true
+      });
+    }
+
+    if (analysis.waterInjection.adjectiveHell.isExcessive) {
+      recommendations.push({
+        category: 'water',
+        severity: 'medium',
+        issue: `形容词密度${analysis.waterInjection.adjectiveHell.density.toFixed(1)}%，形成"形容词地狱"`,
+        solution: '精简形容词使用，保留最具表现力的词汇',
+        autoFixable: true
+      });
+    }
+
+    // 黄金三章推荐
+    analysis.goldenThree.issues.forEach(issue => {
+      recommendations.push({
+        category: 'golden-three',
+        severity: analysis.goldenThree.isGoldenStandard ? 'low' : 'high',
+        issue,
+        solution: analysis.goldenThree.hasSystemCheat ?
+          '控制金手指/系统出现节奏，避免读者审美疲劳' :
+          '在前三章建立足够冲突和拉仇恨元素',
+        autoFixable: false
+      });
+    });
 
     // Emotional curve recommendations
     if (!analysis.emotionalCurve.hasClimax) {
       recommendations.push({
         category: 'emotional',
         severity: 'high',
-        issue: `Climax at ${analysis.emotionalCurve.climaxPosition.toFixed(0)}% instead of 70-80%`,
-        solution: 'Restructure chapter to place peak tension between 70-80% mark',
+        issue: `高潮出现在${analysis.emotionalCurve.climaxPosition.toFixed(0)}%，不符合70-80%标准`,
+        solution: '重新构建章节，将最高潮放在70-80%位置',
         autoFixable: false
       });
     }
@@ -552,8 +812,8 @@ export class QualityController {
       recommendations.push({
         category: 'emotional',
         severity: 'medium',
-        issue: 'Too much consecutive high intensity',
-        solution: 'Insert calmer moments between high-tension scenes',
+        issue: '连续高强度情绪，需要情绪缓冲',
+        solution: '在高潮间插入平静时刻',
         autoFixable: true
       });
     }
@@ -563,52 +823,19 @@ export class QualityController {
       recommendations.push({
         category: 'pacing',
         severity: 'medium',
-        issue: analysis.pacing.issues[0] || 'Pacing mismatch',
-        solution: `Adjust sentence length for ${analysis.pacing.sceneType} scene`,
+        issue: analysis.pacing.issues[0] || '节奏不匹配',
+        solution: `调整${analysis.pacing.sceneType}场景的句子长度`,
         autoFixable: true
       });
     }
-
-    // Repetition recommendations
-    if (analysis.repetition.needsVariation) {
-      recommendations.push({
-        category: 'repetition',
-        severity: 'medium',
-        issue: `${analysis.repetition.overusedWords.length} overused words detected`,
-        solution: 'Replace repeated words with synonyms',
-        autoFixable: true
-      });
-    }
-
-    // Show vs Tell recommendations
-    if (analysis.showVsTell.needsConversion) {
-      recommendations.push({
-        category: 'show-tell',
-        severity: 'high',
-        issue: `Poor show/tell ratio: ${analysis.showVsTell.ratio.toFixed(1)}:1`,
-        solution: 'Convert emotion/state tells to physical actions',
-        autoFixable: true
-      });
-    }
-
-    // Revelation recommendations
-    analysis.revelation.issues.forEach(issue => {
-      recommendations.push({
-        category: 'revelation',
-        severity: 'high',
-        issue,
-        solution: 'Show revelation through concrete details and character reactions',
-        autoFixable: false
-      });
-    });
 
     // Stakes recommendations
     if (!analysis.stakes.areStakesClear) {
       recommendations.push({
         category: 'stakes',
         severity: 'high',
-        issue: 'Stakes are unclear',
-        solution: 'Explicitly state what character will lose if they fail',
+        issue: '利益相关不明确',
+        solution: '明确说明角色失败将失去什么',
         autoFixable: false
       });
     }
@@ -625,62 +852,65 @@ export class QualityController {
       if (!rec.autoFixable) return;
 
       switch (rec.category) {
-        case 'repetition':
-          correctedContent = this.autoFixRepetition(correctedContent);
-          break;
-        case 'show-tell':
-          correctedContent = this.autoFixShowVsTell(correctedContent);
-          break;
-        case 'pacing':
-          correctedContent = this.autoFixPacing(correctedContent);
+        case 'water':
+          correctedContent = this.autoFixWaterInjection(correctedContent);
           break;
         case 'emotional':
           correctedContent = this.autoFixEmotionalBreathing(correctedContent);
           break;
+        case 'pacing':
+          correctedContent = this.autoFixPacing(correctedContent);
+          break;
       }
     });
+
+    // 总是尝试自动修正中文情绪表达（如果有的话）
+    correctedContent = this.autoFixChineseEmotionTell(correctedContent);
 
     return correctedContent;
   }
 
-  private autoFixRepetition(content: string): string {
+  private autoFixWaterInjection(content: string): string {
     let fixed = content;
 
-    // Replace overused words with alternatives
-    Object.entries(this.WORD_ALTERNATIVES).forEach(([word, alternatives]) => {
-      const regex = new RegExp(`\\b${word}\\b`, 'gi');
-      const matches = fixed.match(regex) || [];
+    // 删除无意义重复
+    Object.values(this.WATER_PATTERNS.meaningless).forEach(regex => {
+      fixed = fixed.replace(regex, (match) => {
+        // 只保留3个字符的重复，其余删除
+        return match.length <= 3 ? match : match.substring(0, 3);
+      });
+    });
 
-      if (matches.length > this.OVERUSED_THRESHOLD) {
-        let altIndex = 0;
-        fixed = fixed.replace(regex, (match) => {
-          if (altIndex === 0) {
-            altIndex++;
-            return match; // Keep first occurrence
-          }
-          const replacement = alternatives[altIndex % alternatives.length];
-          altIndex++;
-          return replacement;
-        });
-      }
+    // 精简形容词地狱
+    let adjectiveCount = 0;
+    this.WATER_PATTERNS.adjectiveHell.forEach(regex => {
+      fixed = fixed.replace(regex, (match) => {
+        adjectiveCount++;
+        // 每3个形容词保留1个
+        if (adjectiveCount % 3 === 0) {
+          return match;
+        }
+        return '';
+      });
     });
 
     return fixed;
   }
 
-  private autoFixShowVsTell(content: string): string {
+  private autoFixChineseEmotionTell(content: string): string {
     let fixed = content;
 
-    this.TELL_PATTERNS.forEach(pattern => {
-      fixed = fixed.replace(pattern, (match) => {
-        // Extract emotion from the tell phrase
-        const emotionMatch = match.match(/(betrayed|confused|angry|sad|happy|excited|afraid)/i);
-        if (emotionMatch) {
-          const emotion = emotionMatch[1].toLowerCase();
-          const physicalOptions = this.EMOTION_TO_PHYSICAL[emotion as keyof typeof this.EMOTION_TO_PHYSICAL];
-          if (physicalOptions) {
-            return physicalOptions[Math.floor(Math.random() * physicalOptions.length)];
-          }
+    // 匹配中文情绪表达："他感到很生气"、"她觉得很难过"等
+    const emotionPatterns = [
+      /([他她它])(感到|觉得|觉得很|感觉|感觉到)(很|非常|特别|十分|极其|无比|相当|格外|异常|尤其|尤为|尤其|极其|极为|万分|十分|百般|千般|万般)*(\w+)/g
+    ];
+
+    emotionPatterns.forEach(pattern => {
+      fixed = fixed.replace(pattern, (match, subject, verb, intensifier, emotion) => {
+        const actionOptions = this.CHINESE_EMOTION_TO_ACTION[emotion as keyof typeof this.CHINESE_EMOTION_TO_ACTION];
+        if (actionOptions) {
+          const randomAction = actionOptions[Math.floor(Math.random() * actionOptions.length)];
+          return `${subject}${randomAction}`;
         }
         return match;
       });

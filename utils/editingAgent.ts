@@ -1,14 +1,14 @@
 /**
- * LLM Agent Architecture for Intelligent Chapter Editing
- * 
- * This agent uses a multi-step reasoning process to analyze and improve chapters
+ * 智能章节编辑的LLM代理架构
+ *
+ * 此代理使用多步推理过程来分析和改进章节
  */
 
 import { ParsedChapterPlan, AgentLogEntry } from '../types';
 import { getFormattedPrompt, PromptNames } from './promptLoader';
 import { generateText } from '../services/llm';
 
-// Type for LLM generation function
+// LLM生成函数的类型
 type LLMGenerateFunction = (
   prompt: string,
   systemInstruction?: string,
@@ -24,7 +24,7 @@ export interface EditingContext {
   chapterPlanText: string;
   critiqueNotes: string;
   chapterNumber: number;
-  onLog?: (entry: AgentLogEntry) => void; // Callback for UI logging
+  onLog?: (entry: AgentLogEntry) => void; // UI日志的回调函数
 }
 
 export interface AgentDecision {
@@ -32,7 +32,7 @@ export interface AgentDecision {
   reasoning: string;
   priority: 'high' | 'medium' | 'low';
   estimatedChanges: string;
-  confidence: number; // 0-100, how confident the agent is in this decision
+  confidence: number; // 0-100，代理对此决策的置信度
 }
 
 export interface EditingResult {
@@ -44,7 +44,7 @@ export interface EditingResult {
 }
 
 /**
- * Helper to create and emit log entries
+ * 创建并发出日志条目的辅助函数
  */
 function log(context: EditingContext, type: AgentLogEntry['type'], message: string, details?: any) {
   const entry: AgentLogEntry = {
@@ -74,7 +74,7 @@ function log(context: EditingContext, type: AgentLogEntry['type'], message: stri
 }
 
 /**
- * Step 1: Agent analyzes the situation and decides on strategy
+ * 步骤1：代理分析情况并决定策略
  */
 export async function analyzeAndDecide(context: EditingContext): Promise<AgentDecision> {
   const { systemPrompt, userPrompt: analysisPrompt } = getFormattedPrompt(PromptNames.EDITING_AGENT_ANALYSIS, {
@@ -131,7 +131,7 @@ function fallbackDecision(context: EditingContext): AgentDecision {
   if (!context.critiqueNotes || context.critiqueNotes.includes('章节很棒') || context.critiqueNotes.includes('章节强劲')) {
     return {
       strategy: 'skip',
-      reasoning: 'No issues identified or chapter marked as strong',
+      reasoning: '未发现问题或章节标记为强劲',
       priority: 'low',
       estimatedChanges: '0%',
       confidence: 90
@@ -141,7 +141,7 @@ function fallbackDecision(context: EditingContext): AgentDecision {
   if (critique.includes('道德简单') || critique.includes('平淡') || critique.includes('原型化') || critique.includes('刻板印象')) {
     return {
       strategy: 'regenerate',
-      reasoning: 'Serious structural issues detected',
+      reasoning: '检测到严重的结构性问题',
       priority: 'high',
       estimatedChanges: '40-60%',
       confidence: 75
@@ -151,7 +151,7 @@ function fallbackDecision(context: EditingContext): AgentDecision {
   if (critique.includes('比喻') || critique.includes('形容词') || critique.includes('副词') || critique.includes('过度写作')) {
     return {
       strategy: 'targeted-edit',
-      reasoning: 'Language-level issues detected',
+      reasoning: '检测到语言层面的问题',
       priority: 'medium',
       estimatedChanges: '10-20%',
       confidence: 70
@@ -160,7 +160,7 @@ function fallbackDecision(context: EditingContext): AgentDecision {
 
   return {
     strategy: 'polish',
-    reasoning: 'Minor improvements needed',
+      reasoning: '需要小幅改进',
     priority: 'low',
     estimatedChanges: '5-10%',
     confidence: 65
@@ -168,7 +168,7 @@ function fallbackDecision(context: EditingContext): AgentDecision {
 }
 
 /**
- * Step 2: Agent executes the chosen strategy
+ * 步骤2：代理执行所选策略
  */
 export async function executeStrategy(
   context: EditingContext,
@@ -193,9 +193,9 @@ export async function executeStrategy(
       return targetedResult;
       
     case 'regenerate':
-      log(context, 'execution', 'Regenerating chapter with plan');
+      log(context, 'execution', '按照计划重新生成章节');
       const regenerateResult = await executeRegeneration(context, generateText);
-      // Log diff for regeneration
+      // 记录重新生成的差异
       if (regenerateResult !== originalContent) {
         logDiff(context, originalContent, regenerateResult, 'regenerate');
       }
@@ -216,7 +216,7 @@ export async function executeStrategy(
 }
 
 /**
- * Helper to log text differences for visualization
+ * 记录文本差异以便可视化的辅助函数
  */
 function logDiff(context: EditingContext, before: string, after: string, strategy: string) {
   const entry: AgentLogEntry = {
@@ -254,7 +254,7 @@ async function executeTargetedEdit(
 }
 
 /**
- * Strategy: Regeneration - Full rewrite following plan
+ * 策略：重新生成 - 按照计划完全重写
  */
 async function executeRegeneration(
   context: EditingContext,
@@ -276,7 +276,7 @@ async function executeRegeneration(
 }
 
 /**
- * Strategy: Polish - Light improvements with plan verification
+ * 策略：润色 - 在计划验证基础上的轻度改进
  */
 async function executePolish(
   context: EditingContext,
@@ -295,7 +295,7 @@ async function executePolish(
 }
 
 /**
- * Step 3: Agent evaluates the result
+ * 步骤3：代理评估结果
  */
 export async function evaluateResult(
   original: string,
@@ -434,6 +434,6 @@ export async function agentEditChapter(
     decision: lastDecision,
     changesApplied: allChangesApplied,
     qualityScore: lastQualityScore,
-    logs: [] // Logs are sent via callback, not stored here
+    logs: [] // 日志通过回调发送，不在此存储
   };
 }

@@ -30,7 +30,7 @@ export interface SynthesisOutput {
 }
 
 export interface ConflictResolution {
-  conflictType: 'tone' | 'pacing' | 'content' | 'character';
+  conflictType: 'tone' | 'pacing' | 'content' | 'character' | 'power_scaling' | 'system_logic';
   description: string;
   resolution: string;
 }
@@ -57,19 +57,19 @@ export class SynthesisAgent {
     const conflicts = this.detectConflicts(slotMappings, input);
     const resolvedMappings = await this.resolveConflicts(slotMappings, conflicts);
 
-    // Step 3: Generate transitions and connecting tissue
-    const transitions = await this.generateTransitions(resolvedMappings, input);
+    // Step 3: Generate chapter hooks for cliffhangers
+    const chapterHooks = await this.generateChapterHooks(resolvedMappings, input);
 
     // Step 4: Perform final integration
     const integratedChapter = await this.performIntegration(
       input.structureOutput.chapterStructure,
       resolvedMappings,
-      transitions
+      chapterHooks
     );
 
     const output: SynthesisOutput = {
       integratedChapter,
-      transitionsAdded: transitions,
+      transitionsAdded: chapterHooks,
       integrationNotes: this.generateIntegrationNotes(resolvedMappings),
       conflictsResolved: conflicts,
       metadata: {
@@ -80,7 +80,7 @@ export class SynthesisAgent {
         notes: [
           `Integrated ${Object.keys(resolvedMappings).length} slots from 3 specialist agents`,
           `Resolved ${conflicts.length} conflicts`,
-          `Added ${transitions.length} transitions`
+          `Added ${chapterHooks.length} chapter hooks`
         ]
       }
     };
@@ -148,6 +148,14 @@ export class SynthesisAgent {
     const contentConflicts = this.detectContentConflicts(mappings);
     conflicts.push(...contentConflicts);
 
+    // Check for power scaling conflicts (战力崩坏检测)
+    const powerConflicts = this.detectPowerScalingConflicts(mappings, input);
+    conflicts.push(...powerConflicts);
+
+    // Check for system logic conflicts (系统逻辑检测)
+    const systemConflicts = this.detectSystemLogicConflicts(mappings, input);
+    conflicts.push(...systemConflicts);
+
     if (conflicts.length > 0) {
       console.log(`⚠️ Detected ${conflicts.length} conflicts requiring resolution`);
     }
@@ -182,6 +190,72 @@ export class SynthesisAgent {
     return conflicts;
   }
 
+  private detectPowerScalingConflicts(mappings: Record<string, SlotMapping>, input: SynthesisInput): ConflictResolution[] {
+    const conflicts: ConflictResolution[] = [];
+
+    // 战力崩坏检测：检查主角战力是否突然崩坏
+    // 例如：上一章打不过筑基期，这一章秒杀金丹期
+
+    const allContent = Object.values(mappings).map(m => m.content).join(' ');
+
+    // 检测战力相关关键词
+    const powerKeywords = {
+      low: ['练气期', '筑基初期', '筑基中期', '筑基后期', '筑基期'],
+      medium: ['金丹初期', '金丹中期', '金丹后期', '金丹期', '元婴初期'],
+      high: ['元婴后期', '化神期', '炼虚期', '合体期', '大乘期', '渡劫期']
+    };
+
+    // 简单的战力崩坏检测逻辑
+    // 这里可以根据具体内容进行更复杂的分析
+    const hasLowPower = powerKeywords.low.some(keyword => allContent.includes(keyword));
+    const hasHighPower = powerKeywords.high.some(keyword => allContent.includes(keyword));
+
+    if (hasLowPower && hasHighPower) {
+      // 检查是否有不合理的战力跳跃
+      // 这里可以扩展为更复杂的逻辑，比如跨章节对比
+      conflicts.push({
+        conflictType: 'power_scaling',
+        description: '检测到可能的战力崩坏：内容中同时出现低阶和极高阶修仙境界',
+        resolution: '建议检查主角战力是否合理，避免突然的境界跳跃'
+      });
+    }
+
+    return conflicts;
+  }
+
+  private detectSystemLogicConflicts(mappings: Record<string, SlotMapping>, input: SynthesisInput): ConflictResolution[] {
+    const conflicts: ConflictResolution[] = [];
+
+    // 系统逻辑检测：检查系统的奖励是否与设定一致
+
+    const allContent = Object.values(mappings).map(m => m.content).join(' ');
+
+    // 检测系统相关内容
+    const systemPatterns = [
+      /系统奖励.*(?:灵石|丹药|功法|法宝)/g,
+      /恭喜宿主.*获得/g,
+      /任务完成.*奖励/g,
+      /升级.*获得.*属性点/g
+    ];
+
+    for (const pattern of systemPatterns) {
+      const matches = allContent.match(pattern);
+      if (matches) {
+        // 检查奖励是否合理
+        // 这里可以添加更复杂的逻辑来验证奖励与任务难度是否匹配
+        // 例如：简单任务不应该给极品法宝，困难任务应该有相应奖励
+
+        conflicts.push({
+          conflictType: 'system_logic',
+          description: `检测到系统奖励：${matches[0]}，请确认奖励是否与设定和难度匹配`,
+          resolution: '验证系统奖励的合理性，避免与世界观设定冲突'
+        });
+      }
+    }
+
+    return conflicts;
+  }
+
   // =================== CONFLICT RESOLUTION ===================
 
   private async resolveConflicts(
@@ -207,30 +281,30 @@ export class SynthesisAgent {
     return resolvedMappings;
   }
 
-  // =================== TRANSITION GENERATION ===================
+  // =================== CHAPTER HOOKS GENERATION ===================
 
-  private async generateTransitions(
+  private async generateChapterHooks(
     mappings: Record<string, SlotMapping>,
     input: SynthesisInput
   ): Promise<string[]> {
-    console.log('🌉 Generating transitions between specialist content...');
+    console.log('🎣 Generating chapter hooks for cliffhangers...');
 
-    const transitionPrompt = this.buildTransitionPrompt(mappings, input);
+    const hookPrompt = this.buildTransitionPrompt(mappings, input);
 
     try {
-      const transitionsContent = await generateText(
+      const hooksContent = await generateText(
         'synthesis',
-        transitionPrompt.userPrompt,
-        transitionPrompt.systemPrompt,
+        hookPrompt.userPrompt,
+        hookPrompt.systemPrompt,
         undefined,
-        0.6, // Lower creativity for transitions - should be subtle
+        0.7, // Moderate creativity for hooks - should be engaging
         0.8,
         30
       );
 
-      return this.parseTransitions(transitionsContent);
+      return this.parseChapterHooks(hooksContent);
     } catch (error) {
-      console.warn('Failed to generate AI transitions, using basic ones:', error);
+      console.warn('Failed to generate AI hooks, using basic ones:', error);
       return this.generateBasicTransitions(mappings);
     }
   }
@@ -239,52 +313,44 @@ export class SynthesisAgent {
     mappings: Record<string, SlotMapping>,
     input: SynthesisInput
   ): { systemPrompt: string; userPrompt: string } {
-    const systemPrompt = `你是叙事流畅专家。你的工作是在不同专家写作的内容之间创建流畅自然的过渡。
+    const systemPrompt = `你是网文高手，精通"断章"艺术。你唯一的工作是为章节生成让人欲罢不能的钩子(Hooks)。
 
-关键：你的过渡必须微妙且简短 - 刚好足够流畅连接不同元素。不要重写专家内容，只提供连接组织。
+关键原则：
+- 每个钩子必须制造悬念，让读者忍不住点开下一章
+- 钩子要短小精悍，充满张力
+- 不要透露太多，但要吊足胃口
+- 使用网文常见手法：危机、转折、疑问、意外
 
-聚焦：
-- 时间过渡（时间流逝）
-- 空间过渡（地点/焦点变化）
-- 情感桥梁（情绪转变）
-- 逻辑连接（因果关系）`;
+网文钩子类型：
+- 危机降临："就在这时，一道恐怖的气息突然出现！"
+- 转折反转："可他没想到的是……"
+- 疑问悬念："这背后隐藏着什么秘密？"
+- 意外发现："他的瞳孔猛地收缩，因为……"
+- 升级突破："就在突破的关键时刻……"`;
 
-    const userPrompt = `为第 ${input.chapterNumber} 章创建微妙的过渡："${input.chapterTitle}"
+    const userPrompt = `为第 ${input.chapterNumber} 章 "${input.chapterTitle}" 生成网文风格的钩子！
 
-**需要连接的内容：**
+**章节内容梗概：**
 ${this.formatContentForTransitions(mappings)}
 
-**过渡指南：**
-
-1. **时间桥梁：**
-   - "片刻之后……"
-   - "沉默延伸着……"
-   - "她还没来得及回应……"
-
-2. **空间过渡：**
-   - "她的目光转向……"
-   - "声音从……传来"
-   - "角落里有动静……"
-
-3. **情感连接：**
-   - "那种感觉加剧了……"
-   - "他的表情发生了某种变化……"
-   - "紧张感骤然消散……"
-
-4. **逻辑链接：**
-   - "这解释了……"
-   - "这意味着……"
-   - "但随即……"
+**钩子要求：**
+1. **制造悬念**：让读者产生"接下来会发生什么"的好奇心
+2. **断章艺术**：在最关键、最紧张的时刻戛然而止
+3. **网文特色**：使用"就在这时"、"可没想到"、"突然"等网文常用句式
+4. **张力十足**：危机、转折、疑问、意外任选其一
 
 **输出格式：**
-提供3-5个短过渡句，可以插入到内容块之间。每个最多5-15字。
+提供3-5个钩子句子，每个都是独立的断章结尾。
+每个钩子长度：15-30字，充满张力和悬念。
 
-示例：
-"沉默在两人之间尴尬地延伸。"
-"她的注意力猛地回到现实。"
-"这个暗示像冷水一样击中了她。"
+**网文钩子示例：**
+"就在他准备转身离开的时候，一道系统提示突然出现在脑海中："
+"可就在这时，天空忽然暗了下来，一股毁天灭地的气息正从远方逼近！"
+"他的脸色瞬间变得煞白，因为他突然想起了一个恐怖的传闻……"
+"突破的瓶颈终于松动了，可就在这时，一股诡异的力量突然入侵了他的识海！"
+"她正准备说出那个秘密，可没想到，对方竟然已经知道了……"
 
-现在生成过渡：`;
+**生成钩子：**`;
 
     return { systemPrompt, userPrompt };
   }
@@ -296,22 +362,25 @@ ${this.formatContentForTransitions(mappings)}
       .join('\n');
   }
 
-  private parseTransitions(content: string): string[] {
-    // Extract transition phrases from AI response
+  private parseChapterHooks(content: string): string[] {
+    // Extract hook phrases from AI response
     const lines = content.split('\n').filter(line => line.trim());
     return lines
-      .filter(line => line.length > 5 && line.length < 100)
-      .slice(0, 5); // Max 5 transitions
+      .filter(line => line.length > 10 && line.length < 100) // Hooks should be longer than basic transitions
+      .slice(0, 5); // Max 5 hooks
   }
 
   private generateBasicTransitions(mappings: Record<string, SlotMapping>): string[] {
-    // Fallback basic transitions
+    // 网文风格的基本过渡词汇
     return [
-      "片刻过去了。",
-      "沉默延伸着。",
-      "空气中有什么变了。",
-      "时间仿佛慢了下来。",
-      "氛围发生了变化。"
+      "一盏茶的功夫过去了。",
+      "半晌无人言语。",
+      "与此同时，千里之外……",
+      "画面一转。",
+      "须臾之间。",
+      "转眼已是黄昏。",
+      "就在这时。",
+      "另一边。"
     ];
   }
 
@@ -320,11 +389,11 @@ ${this.formatContentForTransitions(mappings)}
   private async performIntegration(
     structureTemplate: string,
     mappings: Record<string, SlotMapping>,
-    transitions: string[]
+    chapterHooks: string[]
   ): Promise<string> {
     console.log('🔧 Performing final integration...');
 
-    const integrationPrompt = this.buildIntegrationPrompt(structureTemplate, mappings, transitions);
+    const integrationPrompt = this.buildIntegrationPrompt(structureTemplate, mappings, chapterHooks);
 
     try {
       const integratedContent = await generateText(
@@ -340,14 +409,14 @@ ${this.formatContentForTransitions(mappings)}
       return integratedContent;
     } catch (error) {
       console.warn('AI integration failed, using simple slot replacement:', error);
-      return this.performSimpleIntegration(structureTemplate, mappings, transitions);
+      return this.performSimpleIntegration(structureTemplate, mappings, chapterHooks);
     }
   }
 
   private buildIntegrationPrompt(
     structureTemplate: string,
     mappings: Record<string, SlotMapping>,
-    transitions: string[]
+    chapterHooks: string[]
   ): { systemPrompt: string; userPrompt: string } {
     const systemPrompt = `你是文本整合专家。你唯一的工作是：
 
@@ -376,15 +445,16 @@ ${Object.entries(mappings)
   .map(([slotId, mapping]) => `[${slotId}]: ${mapping.content}`)
   .join('\n\n')}
 
-**可用过渡：**
-${transitions.join('\n')}
+**可用钩子（仅用于章节末尾）：**
+${chapterHooks.join('\n')}
 
 **整合规则：**
 1. 用对应内容替换每个[SLOT]标记
-2. 在内容感觉脱节处添加过渡
-3. 保持自然段落分隔
-4. 完全保留所有专家内容
-5. 只在绝对必要时添加最少的连接词
+2. 在内容感觉脱节处，使用简单的连接词（如“片刻后”、“与此同时”）。
+3. **必须**从“可用钩子”中选择一个最合适的，放在章节的**最末尾**作为断章。
+4. 保持自然段落分隔
+5. 完全保留所有专家内容
+6. 只在绝对必要时添加最少的连接词
 
 现在执行整合：`;
 
@@ -394,7 +464,7 @@ ${transitions.join('\n')}
   private performSimpleIntegration(
     structureTemplate: string,
     mappings: Record<string, SlotMapping>,
-    transitions: string[]
+    chapterHooks: string[]
   ): string {
     console.log('🔧 Performing simple slot replacement integration...');
 
@@ -432,12 +502,12 @@ ${transitions.join('\n')}
     // DO NOT remove unfilled slots - leave them visible for debugging
     // integrated = integrated.replace(/\[([^\]]+)\]/g, '');
 
-    // Add basic transitions at paragraph breaks if needed
-    if (transitions.length > 0) {
+    // Add chapter hooks at the end if needed (for cliffhanger effect)
+    if (chapterHooks.length > 0) {
       const paragraphs = integrated.split('\n\n');
       if (paragraphs.length > 1) {
-        // Add a transition between first two paragraphs if available
-        integrated = paragraphs.join(`\n\n${transitions[0] || ''}\n\n`);
+        // Add a hook at the end of the chapter for cliffhanger effect
+        integrated = integrated + `\n\n${chapterHooks[0] || ''}`;
       }
     }
 

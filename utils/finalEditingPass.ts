@@ -1,6 +1,6 @@
 /**
- * Final Editing Pass - Reviews all chapters together for consistency and polish
- * This runs after all chapters are generated and individually edited
+ * 最终编辑阶段 - 一起审查所有章节的一致性和润色
+ * 这会在所有章节生成并单独编辑后运行
  */
 
 import { generateText } from '../services/llm';
@@ -40,11 +40,11 @@ export async function performFinalEditingPass(
     
     console.log(`\n📝 Final pass: Chapter ${chapterNum}/${chapters.length}`);
     
-    // Build context from surrounding chapters for better continuity
+    // 从周围章节构建上下文以获得更好的连续性
     const previousChapter = i > 0 ? chapters[i - 1] : null;
     const nextChapter = i < chapters.length - 1 ? chapters[i + 1] : null;
     
-    // Generate comprehensive critique for final pass
+    // 为最终阶段生成全面的批评
     const finalCritique = await generateFinalCritique(
       chapter.content,
       plan,
@@ -53,10 +53,10 @@ export async function performFinalEditingPass(
       nextChapter?.content
     );
     
-    // Build chapter plan text
+    // 构建章节计划文本
     const chapterPlanText = buildChapterPlanText(plan);
     
-    // Run agent editing with final pass context
+    // 使用最终阶段上下文运行代理编辑
     const context: EditingContext = {
       chapterContent: chapter.content,
       chapterPlan: plan,
@@ -68,7 +68,7 @@ export async function performFinalEditingPass(
     
     const result = await agentEditChapter(context, (prompt, system, schema, temp, topP, topK) => generateText('editing', prompt, system, schema, temp, topP, topK));
     
-    // Update chapter with edited content
+    // 使用编辑后的内容更新章节
     const editedChapter: ChapterData = {
       ...chapter,
       content: result.refinedContent
@@ -90,8 +90,8 @@ export async function performFinalEditingPass(
 }
 
 /**
- * Generates a comprehensive critique for the final pass
- * This is more thorough than individual chapter critiques
+ * 为最终阶段生成全面的批评
+ * 这比单独章节批评更彻底
  */
 async function generateFinalCritique(
   chapterContent: string,
@@ -180,7 +180,7 @@ ${previousContext}${nextContext}
 }
 
 /**
- * Builds chapter plan text from parsed plan object
+ * 从解析的计划对象构建章节计划文本
  */
 function buildChapterPlanText(plan: ParsedChapterPlan): string {
   return `标题: ${plan.title || '未命名'}
@@ -203,11 +203,11 @@ function buildChapterPlanText(plan: ParsedChapterPlan): string {
 }
 
 /**
- * Quick check if final pass is needed
- * Returns true if chapters likely need final polish
+ * 快速检查是否需要最终阶段
+ * 如果章节可能需要最终润色则返回true
  */
 export function shouldPerformFinalPass(chapters: ChapterData[]): boolean {
-  // Always perform final pass for books with 3+ chapters
+  // 对于3章或以上的书籍，始终执行最终阶段
   if (chapters.length >= 3) {
     return true;
   }

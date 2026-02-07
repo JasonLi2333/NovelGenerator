@@ -22,8 +22,9 @@ const BookStatistics: React.FC<BookStatisticsProps> = ({ bookContent, metadata }
     const avgWordsPerChapter = chapterCount > 0 ? Math.round(totalWords / chapterCount) : 0;
     
     // Calculate dialogue ratio (approximate - count lines with quotes)
-    const dialogueLines = bookContent.split('\n').filter(line => 
-      line.includes('"') || line.includes('"') || line.includes('"')
+    const dialogueLines = bookContent.split('\n').filter(line =>
+      line.includes('"') || line.includes('"') || line.includes('"') || line.includes('"') ||
+      line.includes('"') || line.includes('"')
     ).length;
     const totalLines = bookContent.split('\n').filter(line => line.trim().length > 0).length;
     const dialogueRatio = totalLines > 0 ? Math.round((dialogueLines / totalLines) * 100) : 0;
@@ -51,11 +52,11 @@ const BookStatistics: React.FC<BookStatisticsProps> = ({ bookContent, metadata }
 
   const formatReadingTime = (minutes: number): string => {
     if (minutes < 60) {
-      return `${minutes} min`;
+      return `${minutes}分钟`;
     }
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
-    return `${hours}h ${mins}m`;
+    return `${hours}小时${mins}分钟`;
   };
 
   return (

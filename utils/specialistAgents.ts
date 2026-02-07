@@ -1,6 +1,6 @@
 /**
- * Specialist Agents System
- * Specialized agents for different aspects of chapter generation
+ * 专家代理系统
+ * 为章节生成的各个方面提供专门化的代理
  */
 
 import { generateText } from '../services/llm';
@@ -9,7 +9,7 @@ import { StructureContext, CharacterContext, SceneContext, CoherenceConstraints 
 import { getFormattedPrompt, PromptNames, formatPrompt } from './promptLoader';
 import { getGenreGuidelines } from './genrePrompts';
 
-// =================== SHARED INTERFACES ===================
+// =================== 共享接口 ===================
 
 export interface AgentOutput {
   content: Record<string, string>;
@@ -28,7 +28,7 @@ export interface SlotContent {
   priority: number;
 }
 
-// =================== STRUCTURE AGENT ===================
+// =================== 结构代理 ===================
 
 export interface StructureAgentInput {
   chapterPlan: ParsedChapterPlan;
@@ -41,7 +41,7 @@ export interface StructureAgentInput {
 }
 
 export interface StructureAgentOutput extends AgentOutput {
-  chapterStructure: string; // Template with [SLOT] markers
+  chapterStructure: string; // 带有[SLOT]标记的模板
   plotAdvancement: string[];
   pacingNotes: string[];
   transitionPoints: string[];
@@ -64,8 +64,8 @@ export class StructureAgent {
       'structure_agent',
       prompt.userPrompt,
       prompt.systemPrompt,
-      undefined, // No JSON schema needed for structure
-      0.7, // Higher creativity for structure
+      undefined, // 结构不需要JSON模式
+      0.7, // 结构需要更高的创造性
       0.9,
       40
     );
@@ -74,7 +74,7 @@ export class StructureAgent {
     output.metadata = {
       agentType: 'Structure',
       processingTime: Date.now() - startTime,
-      confidence: 85, // Structure is fairly predictable
+      confidence: 85, // 结构相对可预测
       notes: [`Generated framework with ${Object.keys(output.content).length} slots`]
     };
 
@@ -281,7 +281,7 @@ ${input.previousChapterEnd ? `上一章结尾："${input.previousChapterEnd.slic
   }
 
   private parseStructureOutput(content: string, input: StructureAgentInput): StructureAgentOutput {
-    // Extract slot information from the generated structure
+    // 从生成的结构中提取槽位信息
     const slots = this.extractSlots(content);
 
     return {
@@ -315,8 +315,8 @@ ${input.previousChapterEnd ? `上一章结尾："${input.previousChapterEnd.slic
   }
 
   private extractPlotPoints(content: string): string[] {
-    // Extract major plot advancement from structure
-    // This is a simplified version - could be enhanced
+    // 从结构中提取主要情节推进
+    // 这是简化版本 - 可以增强
     return ['Chapter structure created with plot progression'];
   }
 
@@ -330,7 +330,7 @@ ${input.previousChapterEnd ? `上一章结尾："${input.previousChapterEnd.slic
   }
 }
 
-// =================== CHARACTER AGENT ===================
+// =================== 角色代理 ===================
 
 export interface CharacterAgentInput {
   chapterPlan: ParsedChapterPlan;
@@ -340,7 +340,7 @@ export interface CharacterAgentInput {
   structureSlots: StructureAgentOutput['slots'];
   dialogueRequirements: DialogueRequirement[];
   storyOutline: string;
-  genre?: string; // User's selected genre for style adaptation
+  genre?: string; // 用户选择的类型，用于风格适配
 }
 
 export interface DialogueRequirement {
@@ -370,7 +370,7 @@ export class CharacterAgent {
       prompt.userPrompt,
       prompt.systemPrompt,
       undefined,
-      0.8, // High creativity for character content
+      0.8, // 角色内容需要高创造性
       0.9,
       40
     );
@@ -379,7 +379,7 @@ export class CharacterAgent {
     output.metadata = {
       agentType: 'Character',
       processingTime: Date.now() - startTime,
-      confidence: 80, // Character content can be subjective
+      confidence: 80, // 角色内容可能较主观
       notes: [`Generated content for ${input.structureSlots.dialogueSlots.length} dialogue slots`]
     };
 
@@ -387,9 +387,9 @@ export class CharacterAgent {
   }
 
   private buildCharacterPrompt(input: CharacterAgentInput): { systemPrompt: string; userPrompt: string } {
-    // Get genre-specific guidelines
+    // 获取类型特定指南
     const genreGuidelines = input.genre ? getGenreGuidelines(input.genre) : '';
-    const genreNote = input.genre ? `Writing in ${input.genre.toUpperCase()} genre` : 'Using general fiction techniques';
+    const genreNote = input.genre ? `使用${input.genre.toUpperCase()}类型写作` : '使用通用小说技巧';
     
     const systemPrompt = `你是角色发展和对话专家。你的工作是写出真实、情感共鸣的对话和角色内心时刻。
 
@@ -866,17 +866,17 @@ ${input.structureSlots.internalSlots.map((slot, i) => `${i+1}. [${slot}] - 聚�
   }
 
   private extractCharacterMoments(content: string): string[] {
-    // Extract significant character development moments
+    // 提取重要的角色发展时刻
     return ['Character content generated with emotional depth'];
   }
 
   private extractEmotionalProgression(content: string): string[] {
-    // Extract emotional journey through the chapter
+    // 提取章节中的情感旅程
     return ['Emotional progression tracked through dialogue and thoughts'];
   }
 }
 
-// =================== SCENE AGENT ===================
+// =================== 场景代理 ===================
 
 export interface SceneAgentInput {
   chapterPlan: ParsedChapterPlan;
@@ -885,7 +885,7 @@ export interface SceneAgentInput {
   constraints: CoherenceConstraints;
   structureSlots: StructureAgentOutput['slots'];
   storyOutline: string;
-  genre?: string; // User's selected genre for atmosphere adaptation
+  genre?: string; // 用户选择的类型，用于氛围适配
 }
 
 export interface SceneAgentOutput extends AgentOutput {
@@ -907,7 +907,7 @@ export class SceneAgent {
       prompt.userPrompt,
       prompt.systemPrompt,
       undefined,
-      0.8, // High creativity for atmospheric content
+      0.8, // 氛围内容需要高创造性
       0.9,
       40
     );
@@ -916,7 +916,7 @@ export class SceneAgent {
     output.metadata = {
       agentType: 'Scene',
       processingTime: Date.now() - startTime,
-      confidence: 85, // Scene content is fairly objective
+      confidence: 85, // 场景内容相对客观
       notes: [`Generated content for ${input.structureSlots.descriptionSlots.length} description slots and ${input.structureSlots.actionSlots.length} action slots`]
     };
 
@@ -924,9 +924,9 @@ export class SceneAgent {
   }
 
   private buildScenePrompt(input: SceneAgentInput): { systemPrompt: string; userPrompt: string } {
-    // Get genre-specific guidelines
+    // 获取类型特定指南
     const genreGuidelines = input.genre ? getGenreGuidelines(input.genre) : '';
-    const genreNote = input.genre ? `Writing in ${input.genre.toUpperCase()} genre` : 'Using general fiction techniques';
+    const genreNote = input.genre ? `使用${input.genre.toUpperCase()}类型写作` : '使用通用小说技巧';
     
     const systemPrompt = `你是氛围写作和动作序列大师。你的专长是创造生动、沉浸式的场景，调动所有感官，让读者身临其境。
 
@@ -1444,7 +1444,7 @@ ${input.structureSlots.actionSlots.map((slot, i) => `${i+1}. [${slot}] - 类型�
   }
 }
 
-// =================== EXPORT ===================
+// =================== 导出 ===================
 
 export const structureAgent = new StructureAgent();
 export const characterAgent = new CharacterAgent();
