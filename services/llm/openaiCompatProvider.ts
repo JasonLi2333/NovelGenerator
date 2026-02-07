@@ -13,7 +13,7 @@ import {
   OpenAICompatResponse 
 } from './types';
 import { geminiSchemaToStandard, schemaToPromptDescription } from './schemaAdapter';
-import { getModelMaxTokens } from './modelDefaults';
+import { getModelMaxTokens, modelSupportsTemperature } from './modelDefaults';
 
 /**
  * 获取提供商的 API 配置
@@ -148,9 +148,17 @@ export class OpenAICompatProvider implements LLMProvider {
         const request: OpenAICompatRequest = {
           model: params.model,
           messages: [],
-          temperature: params.temperature,
-          top_p: params.topP,
         };
+
+        // 推理模型（GPT-5 全系列、O 系列）不支持 temperature 和 top_p
+        // 传入会报 400: "Unsupported value: 'temperature' does not support X with this model"
+        const supportsTemp = modelSupportsTemperature(params.model);
+        if (supportsTemp) {
+          request.temperature = params.temperature;
+          request.top_p = params.topP;
+        } else if (params.temperature !== undefined || params.topP !== undefined) {
+          console.warn(`⚠️ Model "${params.model}" is a reasoning model and does not support temperature/top_p. Skipping these parameters.`);
+        }
 
         // 根据模型查询正确的 maxTokens（不再写死 16384）
         const maxTokens = params.maxTokens || getModelMaxTokens(params.model, this.provider);
@@ -162,7 +170,7 @@ export class OpenAICompatProvider implements LLMProvider {
           request.max_tokens = maxTokens;
         }
 
-        console.log(`📊 maxTokens: ${maxTokens} (model: ${params.model}, provider: ${this.provider})`);
+        console.log(`📊 maxTokens: ${maxTokens} | temperature: ${supportsTemp ? (params.temperature ?? 'default') : 'N/A (reasoning model)'} (model: ${params.model}, provider: ${this.provider})`);
 
         // 添加 system instruction
         if (params.systemInstruction) {

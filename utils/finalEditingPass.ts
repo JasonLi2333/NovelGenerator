@@ -3,7 +3,7 @@
  * This runs after all chapters are generated and individually edited
  */
 
-import { generateGeminiText } from '../services/geminiService';
+import { generateText } from '../services/llm';
 import { ParsedChapterPlan, AgentLogEntry, ChapterData } from '../types';
 import { agentEditChapter, EditingContext } from './editingAgent';
 
@@ -66,7 +66,7 @@ export async function performFinalEditingPass(
       onLog: onLog
     };
     
-    const result = await agentEditChapter(context, generateGeminiText);
+    const result = await agentEditChapter(context, (prompt, system, schema, temp, topP, topK) => generateText('editing', prompt, system, schema, temp, topP, topK));
     
     // Update chapter with edited content
     const editedChapter: ChapterData = {
@@ -102,82 +102,80 @@ async function generateFinalCritique(
 ): Promise<string> {
   
   const previousContext = previousChapterContent 
-    ? `\n**PREVIOUS CHAPTER (last 1000 chars):**\n${previousChapterContent.slice(-1000)}\n`
+    ? `\n**上一章（最后1000字）：**\n${previousChapterContent.slice(-1000)}\n`
     : '';
   
   const nextContext = nextChapterContent
-    ? `\n**NEXT CHAPTER (first 1000 chars):**\n${nextChapterContent.slice(0, 1000)}\n`
+    ? `\n**下一章（前1000字）：**\n${nextChapterContent.slice(0, 1000)}\n`
     : '';
   
-  const critiquePrompt = `You are performing a FINAL EDITING PASS on this chapter. This is the last chance to fix issues before publication.
+  const critiquePrompt = `你正在对本章进行最终编辑审核。这是出版前修复问题的最后机会。
 
-**CHAPTER ${chapterNumber}:**
-${chapterContent.substring(0, 6000)}${chapterContent.length > 6000 ? '...(content continues)' : ''}
+**第 ${chapterNumber} 章：**
+${chapterContent.substring(0, 6000)}${chapterContent.length > 6000 ? '...(内容继续)' : ''}
 
-**CHAPTER PLAN:**
-- Moral Dilemma: ${plan.moralDilemma || 'Not specified'}
-- Character Complexity: ${plan.characterComplexity || 'Not specified'}
-- Consequences: ${plan.consequencesOfChoices || 'Not specified'}
+**章节计划：**
+- 道德困境：${plan.moralDilemma || '未指定'}
+- 角色复杂性：${plan.characterComplexity || '未指定'}
+- 后果：${plan.consequencesOfChoices || '未指定'}
 ${previousContext}${nextContext}
 
-**FINAL PASS CRITIQUE FOCUS:**
+**最终审核重点：**
 
-**0. FORBIDDEN WORDS (ABSOLUTE PRIORITY):**
-   - NEVER allow "obsidian" or any derivative (obsidian-like, obsidian's, etc.)
-   - NEVER allow "thorn" or "thorne" or any derivative (thorns, thorny, etc.)
-   - Replace obsidian with: "black stone", "dark walls", "stone", "dark rock"
-   - Replace thorn/thorne with: "spike", "sharp point", "barb", be specific
-   - This is CRITICAL - flag ANY instance immediately
+**0. 禁用词汇（绝对优先）：**
+   - 绝不允许"一股强大的气息""浑身一震""心中暗道""缓缓说道""目光如炬"等AI套话
+   - 不要堆砌四字成语
+   - 这是关键 - 立即标记任何实例
 
-1. **CONTINUITY ISSUES (CRITICAL):**
-   - Does this chapter flow naturally from the previous one?
-   - Are there jarring transitions or unexplained jumps?
-   - Do character states/locations make sense given previous chapter?
+1. **连贯性问题（关键）：**
+   - 本章是否从上一章自然流畅？
+   - 是否有刺耳的过渡或无法解释的跳跃？
+   - 角色状态/位置在前一章的基础上是否合理？
 
-2. **OVERWRITING (CRITICAL):**
-   - Stacked metaphors (more than one per paragraph)
-   - Excessive adjectives (more than 2 per noun)
-   - Purple prose or overly fancy language
-   - Redundant descriptions
+2. **过度写作（关键）：**
+   - 堆砌的比喻（每段超过一个）
+   - 过多的形容词（每个名词超过2个）
+   - 华丽文笔或过于花哨的语言
+   - 冗余描述
 
-3. **SHOW VS TELL:**
-   - Are emotions told instead of shown?
-   - Too much "she felt", "he saw", "they heard"?
+3. **展现 VS 告知：**
+   - 情绪是被告知而非展现？
+   - 太多"她感到"、"他看到"、"他们听到"？
 
-4. **PLAN ADHERENCE:**
-   - Is the moral dilemma present and clear?
-   - Does character complexity show through?
-   - Are consequences of choices visible?
+4. **计划遵循：**
+   - 道德困境是否存在且清晰？
+   - 角色复杂性是否体现？
+   - 选择的后果是否可见？
 
-5. **PACING:**
-   - Are there slow spots or info dumps?
-   - Does the chapter maintain momentum?
+5. **节奏：**
+   - 是否有缓慢点或信息倾倒？
+   - 章节是否保持动力？
 
-6. **DIALOGUE:**
-   - Does dialogue sound natural?
-   - Are character voices distinct?
-   - Too much exposition in dialogue?
+6. **对话：**
+   - 对话听起来自然吗？
+   - 角色声音是否独特？
+   - 对话中是否有太多说明？
 
-7. **CHAPTER ENDING:**
-   - Does it create forward momentum?
-   - Is there a hook for the next chapter?
+7. **章节结尾：**
+   - 是否创造了向前的动力？
+   - 是否有下一章的钩子？
 
-**RESPOND WITH:**
-- If chapter is strong: "CHAPTER IS STRONG" + what works well
-- If issues found: List 3-5 specific problems with examples
-- Focus on issues that would be noticed by readers
-- Be direct and actionable
+**回应：**
+- 如果章节强劲："章节强劲" + 哪些效果好
+- 如果发现问题：列出3-5个具体问题及示例
+- 聚焦于读者会注意到的问题
+- 直接且可操作
 
-Remember: This is the FINAL PASS. Only flag issues worth fixing.`;
+记住：这是最终审核。只标记值得修复的问题。`;
 
-  const systemPrompt = "You are a senior editor performing final quality control before publication.";
+  const systemPrompt = "你是资深编辑，在出版前进行最终质量控制。";
   
   try {
-    const critique = await generateGeminiText(critiquePrompt, systemPrompt, undefined, 0.4, 0.7, 20);
+    const critique = await generateText('self_critique', critiquePrompt, systemPrompt, undefined, 0.4, 0.7, 20);
     return critique;
   } catch (e) {
-    console.warn(`Failed to generate final critique for chapter ${chapterNumber}:`, e);
-    return "Perform standard quality check.";
+    console.warn(`为第${chapterNumber}章生成最终批评失败：`, e);
+    return "执行标准质量检查。";
   }
 }
 

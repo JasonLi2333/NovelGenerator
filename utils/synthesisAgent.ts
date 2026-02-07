@@ -2,7 +2,7 @@
  * Synthesis Agent - Integration specialist for combining specialist agent outputs
  */
 
-import { generateGeminiText } from '../services/geminiService';
+import { generateText } from '../services/llm';
 import { StructureAgentOutput, CharacterAgentOutput, SceneAgentOutput } from './specialistAgents';
 
 // =================== INTERFACES ===================
@@ -218,7 +218,8 @@ export class SynthesisAgent {
     const transitionPrompt = this.buildTransitionPrompt(mappings, input);
 
     try {
-      const transitionsContent = await generateGeminiText(
+      const transitionsContent = await generateText(
+        'synthesis',
         transitionPrompt.userPrompt,
         transitionPrompt.systemPrompt,
         undefined,
@@ -238,52 +239,52 @@ export class SynthesisAgent {
     mappings: Record<string, SlotMapping>,
     input: SynthesisInput
   ): { systemPrompt: string; userPrompt: string } {
-    const systemPrompt = `You are a narrative flow specialist. Your job is to create smooth, natural transitions between different types of content that were written by different specialists.
+    const systemPrompt = `你是叙事流畅专家。你的工作是在不同专家写作的内容之间创建流畅自然的过渡。
 
-CRITICAL: Your transitions must be SUBTLE and BRIEF - just enough to connect different elements smoothly. Do not rewrite the specialist content, only provide connecting tissue.
+关键：你的过渡必须微妙且简短 - 刚好足够流畅连接不同元素。不要重写专家内容，只提供连接组织。
 
-Focus on:
-- Temporal transitions (time passing)
-- Spatial transitions (location/focus changes)
-- Emotional bridges (mood shifts)
-- Logical connections (cause and effect)`;
+聚焦：
+- 时间过渡（时间流逝）
+- 空间过渡（地点/焦点变化）
+- 情感桥梁（情绪转变）
+- 逻辑连接（因果关系）`;
 
-    const userPrompt = `Create subtle transitions for Chapter ${input.chapterNumber}: "${input.chapterTitle}"
+    const userPrompt = `为第 ${input.chapterNumber} 章创建微妙的过渡："${input.chapterTitle}"
 
-**CONTENT TO CONNECT:**
+**需要连接的内容：**
 ${this.formatContentForTransitions(mappings)}
 
-**TRANSITION GUIDELINES:**
+**过渡指南：**
 
-1. **TEMPORAL BRIDGES:**
-   - "A moment later..."
-   - "As the silence stretched..."
-   - "Before she could respond..."
+1. **时间桥梁：**
+   - "片刻之后……"
+   - "沉默延伸着……"
+   - "她还没来得及回应……"
 
-2. **SPATIAL TRANSITIONS:**
-   - "Her gaze shifted to..."
-   - "The sound came from..."
-   - "Movement in the corner..."
+2. **空间过渡：**
+   - "她的目光转向……"
+   - "声音从……传来"
+   - "角落里有动静……"
 
-3. **EMOTIONAL CONNECTORS:**
-   - "The feeling intensified..."
-   - "Something shifted in his expression..."
-   - "The tension broke..."
+3. **情感连接：**
+   - "那种感觉加剧了……"
+   - "他的表情发生了某种变化……"
+   - "紧张感骤然消散……"
 
-4. **LOGICAL LINKS:**
-   - "That explained..."
-   - "Which meant..."
-   - "But then..."
+4. **逻辑链接：**
+   - "这解释了……"
+   - "这意味着……"
+   - "但随即……"
 
-**OUTPUT FORMAT:**
-Provide 3-5 short transition phrases that can be inserted between content blocks. Each should be 5-15 words maximum.
+**输出格式：**
+提供3-5个短过渡句，可以插入到内容块之间。每个最多5-15字。
 
-Example:
-"The silence stretched uncomfortably between them."
-"Her attention snapped back to the present."
-"The implication hit her like cold water."
+示例：
+"沉默在两人之间尴尬地延伸。"
+"她的注意力猛地回到现实。"
+"这个暗示像冷水一样击中了她。"
 
-Generate transitions now:`;
+现在生成过渡：`;
 
     return { systemPrompt, userPrompt };
   }
@@ -306,11 +307,11 @@ Generate transitions now:`;
   private generateBasicTransitions(mappings: Record<string, SlotMapping>): string[] {
     // Fallback basic transitions
     return [
-      "A moment passed.",
-      "The silence stretched.",
-      "Something shifted in the air.",
-      "Time seemed to slow.",
-      "The atmosphere changed."
+      "片刻过去了。",
+      "沉默延伸着。",
+      "空气中有什么变了。",
+      "时间仿佛慢了下来。",
+      "氛围发生了变化。"
     ];
   }
 
@@ -326,7 +327,8 @@ Generate transitions now:`;
     const integrationPrompt = this.buildIntegrationPrompt(structureTemplate, mappings, transitions);
 
     try {
-      const integratedContent = await generateGeminiText(
+      const integratedContent = await generateText(
+        'synthesis',
         integrationPrompt.userPrompt,
         integrationPrompt.systemPrompt,
         undefined,
@@ -347,44 +349,44 @@ Generate transitions now:`;
     mappings: Record<string, SlotMapping>,
     transitions: string[]
   ): { systemPrompt: string; userPrompt: string } {
-    const systemPrompt = `You are a text integration specialist. Your ONLY job is to:
+    const systemPrompt = `你是文本整合专家。你唯一的工作是：
 
-1. Replace [SLOT] markers with provided content
-2. Add smooth transitions between different content types
-3. Ensure natural flow and readability
+1. 用提供的内容替换[SLOT]标记
+2. 在不同类型内容间添加流畅过渡
+3. 确保自然流畅和可读性
 
-DO NOT:
-- Rewrite or modify the specialist content
-- Add new plot elements or descriptions
-- Change the tone or style of existing content
-- Create new dialogue or action
+不要：
+- 重写或修改专家内容
+- 添加新的情节元素或描写
+- 改变现有内容的语气或风格
+- 创建新的对话或动作
 
-ONLY:
-- Fill slots with exact provided content
-- Add minimal connecting words for flow
-- Ensure proper punctuation and formatting`;
+只：
+- 用精确提供的内容填充槽位
+- 添加最少的连接词保证流畅
+- 确保正确的标点和格式`;
 
-    const userPrompt = `Integrate the following content:
+    const userPrompt = `整合以下内容：
 
-**STRUCTURE TEMPLATE:**
+**结构模板：**
 ${structureTemplate}
 
-**SLOT CONTENT:**
+**槽位内容：**
 ${Object.entries(mappings)
   .map(([slotId, mapping]) => `[${slotId}]: ${mapping.content}`)
   .join('\n\n')}
 
-**AVAILABLE TRANSITIONS:**
+**可用过渡：**
 ${transitions.join('\n')}
 
-**INTEGRATION RULES:**
-1. Replace each [SLOT] marker with its corresponding content
-2. Add transitions where content feels disconnected
-3. Maintain natural paragraph breaks
-4. Preserve all specialist content exactly as provided
-5. Only add minimal connecting words if absolutely necessary
+**整合规则：**
+1. 用对应内容替换每个[SLOT]标记
+2. 在内容感觉脱节处添加过渡
+3. 保持自然段落分隔
+4. 完全保留所有专家内容
+5. 只在绝对必要时添加最少的连接词
 
-Perform the integration now:`;
+现在执行整合：`;
 
     return { systemPrompt, userPrompt };
   }

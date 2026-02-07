@@ -5,6 +5,7 @@ import { Input } from './common/Input';
 import { Select } from './common/Select';
 import { MIN_CHAPTERS } from '../constants';
 import { GENRE_CONFIGS } from '../utils/genrePrompts';
+import { getAvailableStrategies } from '../services/llm';
 
 interface UserInputProps {
   storyPremise: string;
@@ -12,7 +13,9 @@ interface UserInputProps {
   numChapters: number;
   setNumChapters: (value: number) => void;
   genre: string;
-  set类型: (value: string) => void;
+  setGenre: (value: string) => void;
+  strategy?: string;
+  setStrategy?: (value: string) => void;
   onSubmit: () => void;
   isLoading: boolean;
 }
@@ -23,10 +26,13 @@ const UserInput: React.FC<UserInputProps> = ({
   numChapters,
   setNumChapters,
   genre,
-  set类型,
+  setGenre,
+  strategy = 'default',
+  setStrategy,
   onSubmit,
   isLoading,
 }) => {
+  const availableStrategies = getAvailableStrategies();
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (numChapters >= MIN_CHAPTERS) {
@@ -55,7 +61,7 @@ const UserInput: React.FC<UserInputProps> = ({
         <p className="text-xs text-slate-400 mt-1">最多1200字符。尽量详细描述</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <label htmlFor="genre" className="block text-sm font-medium text-sky-300 mb-1">
             类型
@@ -63,7 +69,7 @@ const UserInput: React.FC<UserInputProps> = ({
           <Select
             id="genre"
             value={genre}
-            onChange={(e) => set类型(e.target.value)}
+            onChange={(e) => setGenre(e.target.value)}
             className="bg-slate-700 border-slate-600 focus:ring-sky-500 focus:border-sky-500"
           >
             {Object.entries(GENRE_CONFIGS).map(([key, config]) => (
@@ -89,6 +95,27 @@ const UserInput: React.FC<UserInputProps> = ({
             className="bg-slate-700 border-slate-600 focus:ring-sky-500 focus:border-sky-500"
           />
            <p className="text-xs text-slate-400 mt-1">最少 {MIN_CHAPTERS} 章</p>
+        </div>
+
+        <div>
+          <label htmlFor="strategy" className="block text-sm font-medium text-sky-300 mb-1">
+            AI 模型策略
+          </label>
+          <Select
+            id="strategy"
+            value={strategy}
+            onChange={(e) => setStrategy && setStrategy(e.target.value)}
+            className="bg-slate-700 border-slate-600 focus:ring-sky-500 focus:border-sky-500"
+          >
+            {availableStrategies.map(({ id, name, description }) => (
+              <option key={id} value={id}>
+                {name}
+              </option>
+            ))}
+          </Select>
+          <p className="text-xs text-slate-400 mt-1">
+            {availableStrategies.find(s => s.id === strategy)?.description || '选择 AI 模型组合'}
+          </p>
         </div>
       </div>
 

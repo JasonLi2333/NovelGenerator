@@ -22,7 +22,7 @@ export type TaskType =
 export type ProviderType = 'gemini' | 'openai' | 'deepseek' | 'xai';
 
 // 策略方案
-export type StrategyType = 'economic' | 'free' | 'premium' | string; // string 支持自定义
+export type StrategyType = 'economic' | 'free' | 'premium' | 'test' | string; // string 支持自定义
 
 // 模型配置
 export interface ModelAssignment {

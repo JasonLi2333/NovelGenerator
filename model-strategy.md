@@ -366,7 +366,8 @@ Mini/Nano 系列每日免费额度: 25,000,000 tokens
 export enum Strategy {
   ECONOMIC = 'economic',      // 方案A
   FREE = 'free',              // 方案B
-  PREMIUM = 'premium'         // 方案C
+  PREMIUM = 'premium',        // 方案C
+  TEST = 'test'               // 测试方案
 }
 
 export const MODEL_CONFIG = {
@@ -385,17 +386,17 @@ export const MODEL_CONFIG = {
   },
   
   [Strategy.FREE]: {
-    outline: 'gpt-5-mini',        // 免费额度内，用质量更好的 mini
-    extraction: 'gpt-4.1-mini',   // 免费额度内，用 mini（1M上下文）
-    planning: 'gpt-5-mini',
-    structure: 'gpt-5-mini',      // 全用 mini（质量优于 nano）
-    character: 'gpt-5-mini',
-    scene: 'gpt-5-mini',
-    synthesis: 'gpt-5-mini',
-    analysis: 'gpt-4.1-mini',
-    critique: 'gpt-4.1-mini',
-    polish: 'gpt-5-mini',
-    title: 'gpt-5-mini',
+    outline: 'gpt-5-mini',     
+    extraction: 'gpt-4.1-mini',   
+    planning: 'gpt-5-mini',       
+    structure: 'gpt-5-mini',      
+    character: 'gpt-5-mini',     
+    scene: 'gpt-5-mini',   
+    synthesis: 'gpt-5-mini',    
+    analysis: 'gpt-4.1-mini',      
+    critique: 'gpt-4.1-mini', 
+    polish: 'gpt-5-mini',      
+    title: 'gpt-5-mini',   
   },
   
   [Strategy.PREMIUM]: {
@@ -410,6 +411,20 @@ export const MODEL_CONFIG = {
     critique: 'gpt-5',
     polish: 'deepseek-chat',
     title: 'gpt-5',
+  },
+  
+  [Strategy.TEST]: {
+    outline: 'gpt-5-nano',     
+    extraction: 'gpt-4.1-nano',   
+    planning: 'gpt-5-nano',       
+    structure: 'gpt-5-nano',      
+    character: 'gpt-5-nano',     
+    scene: 'gpt-5-nano',   
+    synthesis: 'gpt-5-nano',    
+    analysis: 'gpt-4.1-nano',      
+    critique: 'gpt-4.1-nano', 
+    polish: 'gpt-5-nano',      
+    title: 'gpt-5-nano',   
   }
 };
 ```

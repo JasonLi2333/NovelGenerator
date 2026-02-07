@@ -4,9 +4,19 @@
  * This agent uses a multi-step reasoning process to analyze and improve chapters
  */
 
-import { generateGeminiText } from '../services/geminiService';
 import { ParsedChapterPlan, AgentLogEntry } from '../types';
 import { getFormattedPrompt, PromptNames } from './promptLoader';
+import { generateText } from '../services/llm';
+
+// Type for LLM generation function
+type LLMGenerateFunction = (
+  prompt: string,
+  systemInstruction?: string,
+  responseSchema?: object,
+  temperature?: number,
+  topP?: number,
+  topK?: number
+) => Promise<string>;
 
 export interface EditingContext {
   chapterContent: string;
@@ -69,7 +79,7 @@ function log(context: EditingContext, type: AgentLogEntry['type'], message: stri
 export async function analyzeAndDecide(context: EditingContext): Promise<AgentDecision> {
   const { systemPrompt, userPrompt: analysisPrompt } = getFormattedPrompt(PromptNames.EDITING_AGENT_ANALYSIS, {
     chapter_number: context.chapterNumber,
-    critique_notes: context.critiqueNotes || 'No issues identified',
+    critique_notes: context.critiqueNotes || '未发现问题',
     chapter_plan_text: context.chapterPlanText,
     chapter_length: context.chapterContent.length
   });
@@ -77,17 +87,18 @@ export async function analyzeAndDecide(context: EditingContext): Promise<AgentDe
   try {
     const responseSchema = {
       type: 'object' as const,
+      additionalProperties: false,
       properties: {
         strategy: { type: 'string' as const, enum: ['targeted-edit', 'regenerate', 'polish', 'skip'] },
         reasoning: { type: 'string' as const },
         priority: { type: 'string' as const, enum: ['high', 'medium', 'low'] },
         estimatedChanges: { type: 'string' as const },
-        confidence: { type: 'number' as const, description: 'Confidence level 0-100. High confidence (80+) means clear decision. Low confidence (<60) means uncertain.' }
+        confidence: { type: 'number' as const, description: '置信度0-100。高置信度(80+)表示决策明确。低置信度(<60)表示不确定。' }
       },
       required: ['strategy', 'reasoning', 'priority', 'estimatedChanges', 'confidence']
     };
     
-    const response = await generateGeminiText(analysisPrompt, systemPrompt, responseSchema, 0.3, 0.7, 20);
+    const response = await generateText('editing', analysisPrompt, systemPrompt, responseSchema, 0.3, 0.7, 20);
     const decision = JSON.parse(response);
     
     // Log decision
@@ -162,7 +173,7 @@ function fallbackDecision(context: EditingContext): AgentDecision {
 export async function executeStrategy(
   context: EditingContext,
   decision: AgentDecision,
-  generateText: typeof generateGeminiText
+  generateText: LLMGenerateFunction
 ): Promise<string> {
   
   const originalContent = context.chapterContent;
@@ -231,7 +242,7 @@ function logDiff(context: EditingContext, before: string, after: string, strateg
  */
 async function executeTargetedEdit(
   context: EditingContext,
-  generateText: typeof generateGeminiText
+  generateText: LLMGenerateFunction
 ): Promise<string> {
   
   const { systemPrompt, userPrompt: prompt } = getFormattedPrompt(PromptNames.EDITING_AGENT_TARGETED, {
@@ -247,17 +258,17 @@ async function executeTargetedEdit(
  */
 async function executeRegeneration(
   context: EditingContext,
-  generateText: typeof generateGeminiText
+  generateText: LLMGenerateFunction
 ): Promise<string> {
   
   const { systemPrompt, userPrompt: prompt } = getFormattedPrompt(PromptNames.EDITING_AGENT_REGENERATE, {
     chapter_plan_text: context.chapterPlanText,
-    moral_dilemma: context.chapterPlan.moralDilemma || 'Not specified',
-    character_complexity: context.chapterPlan.characterComplexity || 'Not specified',
-    consequences_of_choices: context.chapterPlan.consequencesOfChoices || 'Not specified',
-    conflict_type: context.chapterPlan.conflictType || 'Not specified',
+    moral_dilemma: context.chapterPlan.moralDilemma || '未指定',
+    character_complexity: context.chapterPlan.characterComplexity || '未指定',
+    consequences_of_choices: context.chapterPlan.consequencesOfChoices || '未指定',
+    conflict_type: context.chapterPlan.conflictType || '未指定',
     tension_level: context.chapterPlan.tensionLevel || 5,
-    chapter_content_preview: context.chapterContent.substring(0, 8000) + (context.chapterContent.length > 8000 ? '...(truncated)' : ''),
+    chapter_content_preview: context.chapterContent.substring(0, 8000) + (context.chapterContent.length > 8000 ? '...（已截断）' : ''),
     critique_notes: context.critiqueNotes
   });
   
@@ -269,14 +280,14 @@ async function executeRegeneration(
  */
 async function executePolish(
   context: EditingContext,
-  generateText: typeof generateGeminiText
+  generateText: LLMGenerateFunction
 ): Promise<string> {
   
   const { systemPrompt, userPrompt: prompt } = getFormattedPrompt(PromptNames.EDITING_AGENT_POLISH, {
-    moral_dilemma: context.chapterPlan.moralDilemma || 'Not specified',
-    character_complexity: context.chapterPlan.characterComplexity || 'Not specified',
-    consequences_of_choices: context.chapterPlan.consequencesOfChoices || 'Not specified',
-    critique_notes: context.critiqueNotes || 'No specific issues',
+    moral_dilemma: context.chapterPlan.moralDilemma || '未指定',
+    character_complexity: context.chapterPlan.characterComplexity || '未指定',
+    consequences_of_choices: context.chapterPlan.consequencesOfChoices || '未指定',
+    critique_notes: context.critiqueNotes || '无特定问题',
     chapter_content: context.chapterContent
   });
   
@@ -290,25 +301,26 @@ export async function evaluateResult(
   original: string,
   refined: string,
   context: EditingContext,
-  generateText: typeof generateGeminiText
+  generateText: LLMGenerateFunction
 ): Promise<{ qualityScore: number; changesApplied: string[] }> {
   
   const { systemPrompt: evaluationSystemPrompt, userPrompt: evaluationPrompt } = getFormattedPrompt(PromptNames.EDITING_AGENT_EVALUATION, {
     original_length: original.length,
     refined_length: refined.length,
-    moral_dilemma: context.chapterPlan.moralDilemma || 'Not specified',
-    character_complexity: context.chapterPlan.characterComplexity || 'Not specified',
+    moral_dilemma: context.chapterPlan.moralDilemma || '未指定',
+    character_complexity: context.chapterPlan.characterComplexity || '未指定',
     refined_chapter_preview: refined.substring(0, 3000) + '...'
   });
 
   try {
     const evaluationSchema = {
       type: 'object' as const,
+      additionalProperties: false,
       properties: {
-        qualityScore: { type: 'number' as const, description: 'Quality score from 0-100' },
-        changesApplied: { type: 'array' as const, items: { type: 'string' as const }, description: 'List of improvements made' },
-        planElementsPresent: { type: 'boolean' as const, description: 'Are plan elements present?' },
-        remainingIssues: { type: 'array' as const, items: { type: 'string' as const }, description: 'Any remaining problems' }
+        qualityScore: { type: 'number' as const, description: '质量评分0-100' },
+        changesApplied: { type: 'array' as const, items: { type: 'string' as const }, description: '已做的改进列表' },
+        planElementsPresent: { type: 'boolean' as const, description: '计划元素是否存在？' },
+        remainingIssues: { type: 'array' as const, items: { type: 'string' as const }, description: '剩余问题' }
       },
       required: ['qualityScore', 'changesApplied', 'planElementsPresent', 'remainingIssues']
     };
@@ -341,7 +353,7 @@ export async function evaluateResult(
  */
 export async function agentEditChapter(
   context: EditingContext,
-  generateText: typeof generateGeminiText
+  generateText: LLMGenerateFunction
 ): Promise<EditingResult> {
   
   log(context, 'iteration', `Agent starting work on Chapter ${context.chapterNumber}`);
@@ -400,10 +412,10 @@ export async function agentEditChapter(
     // Decide on next iteration strategy
     if (!hasConfidence && decision.strategy !== 'regenerate') {
       log(context, 'iteration', 'Low confidence + low quality → trying regeneration');
-      context.critiqueNotes += '\n\nPREVIOUS ATTEMPT FAILED. Need complete regeneration following plan.';
+      context.critiqueNotes += '\n\n前次尝试失败。需要按照计划完全重新生成。';
     } else if (decision.strategy === 'targeted-edit') {
       log(context, 'iteration', 'Targeted edit insufficient → trying regeneration');
-      context.critiqueNotes += '\n\nTargeted edits not enough. Need deeper structural changes.';
+      context.critiqueNotes += '\n\n针对性编辑不够。需要更深层的结构性修改。';
     } else {
       log(context, 'warning', `Quality still low after ${decision.strategy}`);
     }

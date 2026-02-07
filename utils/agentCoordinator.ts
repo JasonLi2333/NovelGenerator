@@ -7,7 +7,7 @@ import { coherenceManager, ChapterContext, RepetitionReport, RepetitionConstrain
 import { structureAgent, characterAgent, sceneAgent, DialogueRequirement } from './specialistAgents';
 import { synthesisAgent } from './synthesisAgent';
 import { agentEditChapter } from './editingAgent';
-import { generateGeminiText } from '../services/geminiService';
+import { generateText } from '../services/llm';
 import { storyContextDB, SharedChapterState, RevelationValidation, ContentLimitCheck, ToneGuidance, BalanceReport } from './storyContextDatabase';
 
 // =================== INTERFACES ===================
@@ -479,13 +479,13 @@ export class AgentCoordinator {
           chapterContent: content,
           chapterPlan: input.chapterPlan,
           chapterPlanText: this.formatChapterPlan(input.chapterPlan),
-          critiqueNotes: 'Light polish only - preserve specialist content quality',
+          critiqueNotes: '仅轻度润色 - 保留专家内容质量',
           chapterNumber: input.chapterNumber,
           onLog: (entry) => {
             console.log(`📝 Editing log: ${entry.message}`);
           }
         },
-        generateGeminiText
+        (prompt, system, schema, temp, topP, topK) => generateText('editing', prompt, system, schema, temp, topP, topK)
       );
 
       return editingResult.refinedContent;
@@ -530,15 +530,15 @@ export class AgentCoordinator {
   // =================== HELPER METHODS ===================
 
   private formatChapterPlan(plan: ParsedChapterPlan): string {
-    return `Title: ${plan.title}
-Summary: ${plan.summary}
-Scene Breakdown: ${plan.sceneBreakdown}
-Character Development: ${plan.characterDevelopmentFocus}
-Conflict Type: ${plan.conflictType}
-Tension Level: ${plan.tensionLevel}/10
-Moral Dilemma: ${plan.moralDilemma}
-Character Complexity: ${plan.characterComplexity}
-Consequences: ${plan.consequencesOfChoices}`;
+    return `标题：${plan.title}
+概要：${plan.summary}
+场景拆解：${plan.sceneBreakdown}
+角色发展：${plan.characterDevelopmentFocus}
+冲突类型：${plan.conflictType}
+紧张度：${plan.tensionLevel}/10
+道德困境：${plan.moralDilemma}
+角色复杂性：${plan.characterComplexity}
+后果：${plan.consequencesOfChoices}`;
   }
 
   private calculateMetadata(phases: GenerationPhaseResult[], startTime: number) {

@@ -1,7 +1,7 @@
 
 
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import useBookGenerator from './hooks/useBookGenerator';
 import { GenerationStep } from './types';
 import UserInput from './components/UserInput';
@@ -14,6 +14,8 @@ import StreamingContentView from './components/StreamingContentView';
 import AgentActivityLog from './components/AgentActivityLog';
 import FeatureGrid from './components/FeatureGrid';
 import SaveStatusIndicator from './components/SaveStatusIndicator';
+import { setStrategy as setLLMStrategy, getCurrentStrategyId } from './services/llm';
+import { DEFAULT_MODEL_STRATEGY } from './constants';
 
 const App: React.FC = () => {
   const {
@@ -42,6 +44,22 @@ const App: React.FC = () => {
     agentLogs,
     lastSavedAt,
   } = useBookGenerator();
+
+  // Strategy state
+  const [currentStrategy, setCurrentStrategy] = useState<string>(getCurrentStrategyId() || DEFAULT_MODEL_STRATEGY);
+
+  // Initialize strategy on mount
+  useEffect(() => {
+    setLLMStrategy(currentStrategy);
+    console.log(`✅ Initialized LLM strategy: ${currentStrategy}`);
+  }, []);
+
+  // Update strategy when changed
+  const handleStrategyChange = (strategyId: string) => {
+    setCurrentStrategy(strategyId);
+    setLLMStrategy(strategyId);
+    console.log(`✅ Changed LLM strategy to: ${strategyId}`);
+  };
 
   // Debug logging
   console.log('🎨 App render - currentStep:', currentStep, 'isLoading:', isLoading);
@@ -118,6 +136,8 @@ const App: React.FC = () => {
               setNumChapters={setNumChapters}
               genre={storySettings.genre || 'fantasy'}
               setGenre={(genre) => setStorySettings({ ...storySettings, genre })}
+              strategy={currentStrategy}
+              setStrategy={handleStrategyChange}
               onSubmit={handleStartGeneration}
               isLoading={isLoading}
             />

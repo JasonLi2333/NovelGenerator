@@ -6,6 +6,7 @@
 
 ## 目录
 
+- [⚠️ 重要：JSON Schema 必读规范](#️-重要json-schema-必读规范)
 - [OpenAI 模型](#openai-模型)
 - [Google Gemini 系列](#google-gemini-系列)
 - [xAI Grok 系列](#xai-grok-系列)
@@ -13,6 +14,7 @@
 - [API 兼容性](#api-兼容性)
 - [功能支持对比](#功能支持对比)
   - [JSON 输出支持](#json-输出支持)
+  - [JSON Schema 关键规范](#️-json-schema-关键规范必读)
 - [免费额度对比](#免费额度对比)
 - [模型性价比对比](#模型性价比对比)
 - [模型选择建议](#模型选择建议)
@@ -20,6 +22,19 @@
 - [模型生命周期状态](#模型生命周期状态)
 - [已知问题](#已知问题)
 - [参考资料](#参考资料)
+
+---
+
+## ⚠️ 重要：JSON Schema 必读规范
+
+> **🚨 关键规则：OpenAI 的所有 `object` 类型必须包含 `additionalProperties: false`**
+
+如果不遵守此规则，会导致：
+- ❌ HTTP 400 错误
+- ❌ 无限重试循环
+- ❌ 浪费大量时间和API调用
+
+详见：[JSON Schema 关键规范](#️-json-schema-关键规范必读)
 
 ---
 
@@ -118,6 +133,7 @@ GPT-4o（"o" 代表 "omni"）多模态模型，支持文本和图像输入。
 | **最大输出** | 16,384 tokens |
 | **知识截止** | 2023年10月1日 |
 | **价格** | 同 gpt-4o-2024-11-20 |
+| **官方状态** | 已经被gpt-4o-2024-11-20 取代没有参考价值 |
 
 ---
 
@@ -129,6 +145,7 @@ GPT-4o（"o" 代表 "omni"）多模态模型，支持文本和图像输入。
 | **最大输出** | 16,384 tokens |
 | **知识截止** | 2023年10月1日 |
 | **价格** | 同 gpt-4o-2024-11-20 |
+| **官方状态** | 已经停用 没有参考价值 |
 
 ---
 
@@ -708,7 +725,9 @@ curl https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:ge
 
 ### JSON 输出使用示例
 
-#### OpenAI 格式
+#### OpenAI 格式（标准 JSON Schema）
+
+**API 请求格式：**
 ```json
 {
   "response_format": {
@@ -717,15 +736,46 @@ curl https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:ge
       "name": "chapter_structure",
       "schema": {
         "type": "object",
+        "additionalProperties": false,
         "properties": {
           "title": {"type": "string"},
           "content": {"type": "string"},
           "word_count": {"type": "number"}
-        }
+        },
+        "required": ["title", "content", "word_count"]
       }
     }
   }
 }
+```
+
+**TypeScript 代码示例：**
+```typescript
+// ✅ 正确：使用 'object' as const 字符串字面量
+const schema = {
+  type: 'object' as const,
+  additionalProperties: false,  // 🚨 关键！必须添加
+  properties: {
+    title: { type: 'string' as const },
+    content: { type: 'string' as const },
+    word_count: { type: 'number' as const }
+  },
+  required: ['title', 'content', 'word_count']
+};
+
+// ✅ 正确：使用 Gemini 的 SchemaType 枚举（会自动转换）
+import { SchemaType } from '@google/generative-ai';
+
+const schema = {
+  type: SchemaType.OBJECT,
+  additionalProperties: false,  // 🚨 关键！必须添加
+  properties: {
+    title: { type: SchemaType.STRING },
+    content: { type: SchemaType.STRING },
+    word_count: { type: SchemaType.NUMBER }
+  },
+  required: ['title', 'content', 'word_count']
+};
 ```
 
 #### Gemini 格式
@@ -745,6 +795,24 @@ curl https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:ge
 }
 ```
 
+> **注意：** Gemini 对 `additionalProperties` 不是强制要求，但建议添加以保持一致性和可移植性。
+
+**TypeScript 代码示例（使用 SchemaType 枚举）：**
+```typescript
+import { SchemaType } from '@google/generative-ai';
+
+const geminiSchema = {
+  type: SchemaType.OBJECT,
+  additionalProperties: false,  // 建议添加
+  properties: {
+    title: { type: SchemaType.STRING },
+    content: { type: SchemaType.STRING },
+    word_count: { type: SchemaType.NUMBER }
+  },
+  required: ['title', 'content', 'word_count']
+};
+```
+
 #### DeepSeek 格式
 ```json
 {
@@ -753,6 +821,347 @@ curl https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:ge
   }
 }
 ```
+
+---
+
+## ⚠️ JSON Schema 关键规范（必读）
+
+### OpenAI Structured Output 强制要求
+
+**所有 `object` 类型必须显式设置 `additionalProperties: false`**
+
+#### ❌ 错误示例（会导致 HTTP 400 错误）
+```typescript
+const schema = {
+  type: 'object',
+  // ❌ 缺少 additionalProperties: false
+  properties: {
+    title: { type: 'string' },
+    content: { type: 'string' }
+  },
+  required: ['title', 'content']
+};
+```
+
+**错误信息：**
+```
+Invalid schema for response_format 'response': 
+In context=(), 'additionalProperties' is required to be supplied and to be false.
+```
+
+#### ✅ 正确示例
+```typescript
+const schema = {
+  type: 'object',
+  additionalProperties: false,  // ✅ 必须添加
+  properties: {
+    title: { type: 'string' },
+    content: { type: 'string' }
+  },
+  required: ['title', 'content']
+};
+```
+
+### 嵌套对象规则
+
+**所有嵌套的 `object` 类型也需要 `additionalProperties: false`**
+
+#### ✅ 完整正确示例
+```typescript
+const schema = {
+  type: 'object',
+  additionalProperties: false,  // ✅ 外层 object
+  properties: {
+    chapters: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,  // ✅ 嵌套 object
+        properties: {
+          title: { type: 'string' },
+          scenes: {
+            type: 'array',
+            items: {
+              type: 'object',
+              additionalProperties: false,  // ✅ 更深层嵌套
+              properties: {
+                name: { type: 'string' },
+                duration: { type: 'string' }
+              },
+              required: ['name', 'duration']
+            }
+          }
+        },
+        required: ['title', 'scenes']
+      }
+    }
+  },
+  required: ['chapters']
+};
+```
+
+### 不同模型的行为差异
+
+| 模型 | 缺少 `additionalProperties` 时的行为 |
+|------|-------------------------------------|
+| **OpenAI (GPT-4/5/Nano/Mini)** | ❌ 立即返回 HTTP 400 错误 |
+| **Gemini** | ⚠️ 可能宽容处理，但建议添加 |
+| **DeepSeek** | ✅ 使用 `json_object` 模式，不需要 |
+
+### 最佳实践检查清单
+
+在编写任何 JSON Schema 时，务必检查：
+
+- [ ] ✅ 所有 `type: 'object'` 都添加了 `additionalProperties: false`
+- [ ] ✅ 所有 `type: SchemaType.OBJECT` 都添加了 `additionalProperties: false`
+- [ ] ✅ 嵌套的 object（如 items 中的 object）也添加了
+- [ ] ✅ 使用 `required` 数组明确必填字段
+- [ ] ✅ 所有字段都有清晰的 `description`
+
+### 常见错误场景
+
+#### 场景1：嵌套对象遗漏
+```typescript
+// ❌ 错误
+{
+  type: 'object',
+  additionalProperties: false,  // ✅ 外层有
+  properties: {
+    items: {
+      type: 'array',
+      items: {
+        type: 'object',  // ❌ 这里忘记加了！
+        properties: { ... }
+      }
+    }
+  }
+}
+```
+
+#### 场景2：多处定义不一致
+```typescript
+// ❌ 部分有，部分没有
+const schema1 = { type: 'object', additionalProperties: false, ... };  // ✅
+const schema2 = { type: 'object', properties: { ... } };  // ❌ 遗漏
+```
+
+### 调试技巧
+
+如果遇到 JSON Schema 错误：
+
+1. **查看浏览器控制台错误信息**（按 ⌘+Option+J 或 F12）
+   ```
+   ❌ Error: Invalid schema for response_format 'response'...
+   'additionalProperties' is required to be supplied and to be false.
+   ```
+
+2. **查看错误堆栈**，找到具体的文件和函数名
+   ```
+   at analyzeAndDecide (editingAgent.ts:100)
+   at agentEditChapter (editingAgent.ts:371)
+   ```
+
+3. **搜索该文件中的所有 schema 定义**
+   ```bash
+   # 方法1：搜索 'object' 字符串格式
+   grep -n "type:.*'object'" utils/editingAgent.ts
+   
+   # 方法2：搜索 SchemaType.OBJECT 枚举格式
+   grep -n "type: SchemaType.OBJECT" hooks/useBookGenerator.ts
+   ```
+
+4. **逐一检查是否有 `additionalProperties: false`**
+   ```bash
+   # 检查是否所有 object 类型都有 additionalProperties
+   grep -A 1 "type:.*'object'" utils/editingAgent.ts | grep additionalProperties
+   ```
+
+5. **批量查找所有缺少 additionalProperties 的 schema**
+   ```bash
+   # 找到所有 object 定义
+   grep -rn "type: 'object'" . --include="*.ts" --include="*.tsx"
+   
+   # 然后手动检查每一处是否有 additionalProperties: false
+   ```
+
+### 快速修复模板
+
+遇到错误时，使用此模板快速修复：
+
+```typescript
+// ❌ 原代码
+const schema = {
+  type: 'object',
+  properties: { ... }
+};
+
+// ✅ 修复后
+const schema = {
+  type: 'object',
+  additionalProperties: false,  // ← 添加这一行
+  properties: { ... }
+};
+```
+
+### 实际项目示例
+
+**示例：章节分析 Schema（来自 useBookGenerator.ts）**
+
+```typescript
+import { SchemaType } from '@google/generative-ai';
+
+const analysisSchema = { 
+  type: SchemaType.OBJECT,
+  additionalProperties: false,  // ✅ 必须
+  properties: { 
+    summary: { 
+      type: SchemaType.STRING, 
+      description: "A concise summary of the chapter's events" 
+    }, 
+    timeElapsed: { 
+      type: SchemaType.STRING, 
+      description: "How much time passed during this chapter" 
+    }, 
+    tensionLevel: { 
+      type: SchemaType.INTEGER, 
+      description: "Tension level from 1-10" 
+    },
+    keyEvents: { 
+      type: SchemaType.ARRAY, 
+      items: { type: SchemaType.STRING }, 
+      description: "List of 3-5 key events that occurred in this chapter" 
+    }
+  }, 
+  required: ["summary", "timeElapsed", "tensionLevel", "keyEvents"]
+};
+```
+
+**示例：编辑决策 Schema（来自 editingAgent.ts）**
+
+```typescript
+const responseSchema = {
+  type: 'object' as const,
+  additionalProperties: false,  // ✅ 必须
+  properties: {
+    strategy: { 
+      type: 'string' as const, 
+      enum: ['targeted-edit', 'regenerate', 'polish', 'skip'] 
+    },
+    reasoning: { type: 'string' as const },
+    confidence: { 
+      type: 'number' as const, 
+      description: 'Confidence level 0-100' 
+    }
+  },
+  required: ['strategy', 'reasoning', 'confidence']
+};
+```
+
+### 自动化检查脚本（建议）
+
+可以在项目中添加 pre-commit hook 检查：
+
+```bash
+#!/bin/bash
+# 检查是否有 object 类型的 schema 缺少 additionalProperties
+
+echo "🔍 Checking JSON Schema definitions..."
+
+# 查找所有包含 type: 'object' 的行
+files=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx)$')
+
+for file in $files; do
+  # 检查是否有 type: 'object' 但后面没有 additionalProperties
+  if grep -q "type:.*'object'" "$file"; then
+    if ! grep -A 2 "type:.*'object'" "$file" | grep -q "additionalProperties"; then
+      echo "⚠️ Warning: $file may have schema without additionalProperties"
+    fi
+  fi
+done
+
+echo "✅ Schema check complete"
+```
+
+### FAQ - 常见问题
+
+#### Q1: 为什么 Gemini 不报错，但 OpenAI 会报错？
+**A:** OpenAI 的 Structured Output 严格执行 JSON Schema 规范，要求所有 object 必须显式声明 `additionalProperties: false`。Gemini 相对宽容，即使缺少也能工作，但这会导致代码在切换模型时出现兼容性问题。
+
+**最佳实践：** 始终添加 `additionalProperties: false`，确保跨模型兼容性。
+
+---
+
+#### Q2: 什么时候会触发重试？
+**A:** 当 OpenAI API 返回错误时，`openaiCompatProvider.ts` 会自动重试（最多8次），使用指数退避策略：
+- 尝试1失败 → 等待 3s
+- 尝试2失败 → 等待 6s
+- 尝试3失败 → 等待 12s
+- ...累计可能等待 6 分钟以上
+
+**解决方案：** 修复 schema 定义，而不是依赖重试。
+
+---
+
+#### Q3: 我改了代码为什么还报错？
+**A:** 浏览器可能使用了缓存的旧代码。
+
+**解决方案：**
+1. 硬刷新浏览器（⌘+Shift+R 或 Ctrl+Shift+R）
+2. 或重启开发服务器：
+   ```bash
+   # 停止当前服务器 (Ctrl+C)
+   npm run dev
+   ```
+
+---
+
+#### Q4: 如何快速定位所有需要修复的 schema？
+**A:** 使用以下命令搜索：
+
+```bash
+# 搜索所有可能的 schema 定义
+grep -rn "type: 'object'" . --include="*.ts" --include="*.tsx" | grep -v "additionalProperties"
+grep -rn "type: SchemaType.OBJECT" . --include="*.ts" | grep -v "additionalProperties"
+
+# 或使用 ripgrep（更快）
+rg "type: 'object'" -A 1 | rg -v "additionalProperties"
+```
+
+---
+
+#### Q5: 是否所有 schema 类型都需要 additionalProperties？
+**A:** 不是。只有 `object` 类型需要：
+
+| Schema Type | 需要 additionalProperties? |
+|-------------|---------------------------|
+| `object` | ✅ **必须** |
+| `array` | ❌ 不需要 |
+| `string` | ❌ 不需要 |
+| `number` / `integer` | ❌ 不需要 |
+| `boolean` | ❌ 不需要 |
+
+---
+
+#### Q6: 使用 Gemini 的 SchemaType 枚举会自动转换吗？
+**A:** 是的！项目中有 `schemaAdapter.ts` 会自动处理转换。
+
+```typescript
+// 使用 Gemini 格式定义
+const schema = {
+  type: SchemaType.OBJECT,
+  additionalProperties: false,  // 仍然需要添加！
+  properties: { ... }
+};
+
+// schemaAdapter.geminiSchemaToStandard() 会转换为：
+{
+  type: 'object',
+  additionalProperties: false,  // ✅ 保留
+  properties: { ... }
+}
+```
+
+**注意：** `additionalProperties` 会原样保留，所以 Gemini 格式的 schema 也要添加！
 
 ---
 
@@ -985,17 +1394,47 @@ curl https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:ge
 
 ## 已知问题
 
-### 1. gpt-5-chat-latest 配置超限
-- **问题**：当前配置 max_tokens 为 65,536，超出官方限制 16,384
-- **影响**：可能被 API 自动截断
+### ~~1. max_tokens 写死 16384（已修复）~~
+- **问题**：所有模型的 max_tokens 曾被写死为 16,384
+- **影响**：DeepSeek-chat (max 8K) 和 Grok (max 8K) 超出限制；GPT-5 (max 128K) 等模型潜力被浪费
+- **状态**：✅ 已修复。新增 `services/llm/modelDefaults.ts` 模型映射表，每个模型使用各自的推荐 maxTokens
 
-### 2. O 系列模型
+### 2. gpt-5-chat-latest 配置超限
+- **问题**：gpt-5-chat-latest 官方最大输出仅 16,384 tokens
+- **影响**：不要为该模型配置超过 16,384 的 maxTokens，否则会被 API 自动截断
+
+### ~~3. 推理模型不支持 temperature（已修复）~~
+- **问题**：GPT-5 全系列（gpt-5、gpt-5-mini、gpt-5-nano）和 O 系列（o1、o3、o4-mini）是推理模型，不支持自定义 `temperature` 和 `top_p` 参数，传入会报 400 错误
+- **影响**：使用 FREE 策略（全部使用 gpt-5-mini）时，所有带 temperature 的请求都会失败
+- **状态**：✅ 已修复。`openaiCompatProvider.ts` 现在自动检测推理模型并跳过 temperature/top_p 参数
+- **支持 temperature 的模型**：GPT-4.1 系列、GPT-4o 系列、DeepSeek、Gemini、Grok
+- **不支持 temperature 的模型**：GPT-5 全系列、O1/O3/O4 系列
+
+### 4. O 系列模型
 - **问题**：o1、o3、o4 不适合写作，且被GPT5碾压
 - **影响**：不使用o模型
 
-### 3. 模型退役风险
+### 5. 模型退役风险
 - **GPT-4o/4.1 系列**：虽然 API 暂时可用，但未来可能退役
 - **建议**：优先使用 GPT-5 系列以避免未来迁移
+
+### ~~6. JSON Schema 缺少 additionalProperties（已修复）~~
+- **问题**：多处 JSON Schema 定义中缺少 `additionalProperties: false`
+- **影响**：
+  - OpenAI API 返回 HTTP 400 错误
+  - 触发无限重试循环（最多8次重试，指数退避）
+  - 单次生成可能卡住 3-5 分钟
+  - 影响文件：`useBookGenerator.ts`、`editingAgent.ts`
+- **错误信息**：
+  ```
+  Invalid schema for response_format 'response': 
+  In context=(), 'additionalProperties' is required to be supplied and to be false.
+  ```
+- **状态**：✅ 已修复。所有 schema 的 object 类型都已添加 `additionalProperties: false`
+- **修复位置**：
+  - `hooks/useBookGenerator.ts` - 12处 schema 定义
+  - `utils/editingAgent.ts` - 2处 schema 定义
+- **预防措施**：已在本文档添加 [JSON Schema 关键规范](#️-json-schema-关键规范必读) 章节
 
 ---
 

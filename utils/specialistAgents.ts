@@ -3,7 +3,7 @@
  * Specialized agents for different aspects of chapter generation
  */
 
-import { generateGeminiText } from '../services/geminiService';
+import { generateText } from '../services/llm';
 import { ParsedChapterPlan } from '../types';
 import { StructureContext, CharacterContext, SceneContext, CoherenceConstraints } from './coherenceManager';
 import { getFormattedPrompt, PromptNames, formatPrompt } from './promptLoader';
@@ -60,7 +60,8 @@ export class StructureAgent {
     console.log(`🏗️ Structure Agent generating framework for Chapter ${input.chapterNumber}`);
 
     const prompt = this.buildStructurePrompt(input);
-    const structureContent = await generateGeminiText(
+    const structureContent = await generateText(
+      'structure_agent',
       prompt.userPrompt,
       prompt.systemPrompt,
       undefined, // No JSON schema needed for structure
@@ -81,201 +82,201 @@ export class StructureAgent {
   }
 
   private buildStructurePrompt(input: StructureAgentInput): { systemPrompt: string; userPrompt: string } {
-    const systemPrompt = `You are a master story architect specializing in chapter structure and narrative flow. Your job is to create a PROSE NARRATIVE SKELETON - flowing chapter text with [SLOT] markers for other specialists to fill.
+    const systemPrompt = `你是故事架构大师，专精章节结构和叙事流畅。你的工作是创建散文叙事骨架 - 带有[SLOT]标记的流畅章节文本，供其他专家填充。
 
-CRITICAL OUTPUT REQUIREMENTS:
-1. Write ACTUAL PROSE TEXT - flowing narrative that reads like a chapter draft
-2. Embed [SLOT] markers seamlessly within the prose flow
-3. DO NOT write outlines, frameworks, or meta-descriptions
-4. DO NOT use intensity markings like "*Intensity: 5/10*"
-5. DO NOT write "Here is the framework" or similar introductions
-6. START IMMEDIATELY with narrative prose
+关键输出要求：
+1. 写实际的散文文本 - 读起来像章节草稿的流畅叙事
+2. 在散文流中自然嵌入[SLOT]标记
+3. 不要写大纲、框架或元描述
+4. 不要使用强度标记如"*强度：5/10*"
+5. 不要写"以下是框架"或类似介绍
+6. 立即以叙事散文开始
 
-MANDATORY EXAMPLES OF CORRECT OUTPUT:
-✅ CORRECT: "Delilah stepped into the hotel lobby. [DESCRIPTION_LOBBY_ATMOSPHERE] The receptionist's smile was too wide. [DIALOGUE_RECEPTIONIST_GREETING] Something cold settled in her stomach. [INTERNAL_DELILAH_UNEASE] Before she could turn to leave, footsteps echoed behind her. [ACTION_APPROACH]"
+正确输出的强制示例：
+✅ 正确："她推开酒馆的门。[DESCRIPTION_LOBBY_ATMOSPHERE] 老板娘的笑容过于热情。[DIALOGUE_RECEPTIONIST_GREETING] 一阵寒意在她胃里蔓延。[INTERNAL_DELILAH_UNEASE] 还没来得及转身离开，身后响起了脚步声。[ACTION_APPROACH]"
 
-❌ ABSOLUTELY WRONG: "*Opening scene - Intensity: 5/10* Character enters hotel. [DESCRIPTION_LOBBY_ATMOSPHERE]"
-❌ ABSOLUTELY WRONG: "Here is the structural framework for Chapter 2..."
-❌ ABSOLUTELY WRONG: "**Chapter Title** *Intensity markers* Structural elements"
+❌ 绝对错误："*开场 - 强度：5/10* 角色进入酒馆。[DESCRIPTION_LOBBY_ATMOSPHERE]"
+❌ 绝对错误："以下是第2章的结构框架..."
+❌ 绝对错误："**章节标题** *强度标记* 结构元素"
 
-SLOT TYPES TO EMBED NATURALLY:
-- [DIALOGUE_X] for conversation scenes
-- [ACTION_X] for physical action and movement
-- [INTERNAL_X] for character thoughts and emotions
-- [DESCRIPTION_X] for environmental and atmospheric details
-- [TRANSITION_X] for connecting different scenes
+需要自然嵌入的槽位类型：
+- [DIALOGUE_X] 用于对话场景
+- [ACTION_X] 用于肢体动作和移动
+- [INTERNAL_X] 用于角色想法和情感
+- [DESCRIPTION_X] 用于环境和氛围细节
+- [TRANSITION_X] 用于连接不同场景
 
-YOUR OUTPUT MUST BE FLOWING PROSE WITH EMBEDDED SLOTS - nothing else!`;
+你的输出必须是嵌入槽位的流畅散文 - 别无其他！`;
 
-    const userPrompt = `Write the prose skeleton for Chapter ${input.chapterNumber}: "${input.chapterPlan.title}"
+    const userPrompt = `为第 ${input.chapterNumber} 章写散文骨架："${input.chapterPlan.title}"
 
-**STORY OUTLINE - CRITICAL CONTEXT:**
+**故事大纲 - 关键背景：**
 ${input.storyOutline}
 
-**CHAPTER PLAN TO IMPLEMENT:**
+**要实施的章节计划：**
 ${this.formatChapterPlan(input.chapterPlan)}
 
-**DETAILED SCENE STRUCTURE:**
+**详细场景结构：**
 ${this.formatDetailedScenes(input.chapterPlan)}
 
-**PLANNED EVENTS:**
+**计划事件：**
 ${this.formatChapterEvents(input.chapterPlan)}
 
-**DIALOGUE BEATS:**
+**对话节拍：**
 ${this.formatDialogueBeats(input.chapterPlan)}
 
-**CHARACTER ARCS:**
+**角色弧线：**
 ${this.formatCharacterArcs(input.chapterPlan)}
 
-**STRUCTURAL REQUIREMENTS:**
-- Role in story: ${input.context.chapterRole}
-- Pacing: ${input.context.pacingRequirements.tempo} tempo
-- Tension level: ${input.context.pacingRequirements.tensionLevel}/10
-- Plot threads to advance: ${input.context.plotThreadsToAdvance.map(t => t.title).join(', ')}
+**结构要求：**
+- 在故事中的角色：${input.context.chapterRole}
+- 节奏：${input.context.pacingRequirements.tempo}
+- 紧张度：${input.context.pacingRequirements.tensionLevel}/10
+- 要推进的情节线：${input.context.plotThreadsToAdvance.map(t => t.title).join('、')}
 
-**PREVIOUS CHAPTER CONNECTION:**
-${input.previousChapterEnd ? `Previous chapter ended with: "${input.previousChapterEnd.slice(-200)}"` : 'This is the first chapter'}
+**上一章连接：**
+${input.previousChapterEnd ? `上一章结尾："${input.previousChapterEnd.slice(-200)}"` : '这是第一章'}
 
-**CRITICAL:** Structure must serve the OVERALL STORY ARC described in the outline above. Ensure this chapter advances the narrative toward the story's ultimate destination and maintains consistency with established themes, character arcs, and world-building.
+**关键：** 结构必须服务于上述大纲中描述的整体故事弧线。确保本章推动叙事朝故事最终目标前进，并与已建立的主题、角色弧线和世界观保持一致。
 
-**EMOTIONAL CURVE REQUIREMENTS:**
-MANDATORY: Plan emotional intensity progression that avoids monotone levels
-- Opening (0-20%): MEDIUM intensity (4-6/10) - establish baseline
-- Rising (20-60%): Gradual increase with peaks and valleys
-- Climax (70-80%): PEAK intensity (8-10/10) - main emotional moment
-- Resolution (80-100%): Controlled decrease with potential hook spike
+**情感曲线要求：**
+强制：规划情感强度递进，避免单调水平
+- 开头(0-20%)：中等强度(4-6/10) - 建立基线
+- 上升(20-60%)：逐渐增强，有高峰和低谷
+- 高潮(70-80%)：峰值强度(8-10/10) - 主要情感时刻
+- 收束(80-100%)：受控下降，可能有钩子冲击
 
-**STRUCTURE GUIDELINES:**
+**结构指南：**
 
-1. **OPENING HOOK (0-20% - Medium Intensity):** Start engaging but not overwhelming
-   - Connect to previous chapter if not first
-   - Establish current situation quickly
-   - Use [DESCRIPTION_OPENING] for setting, [INTERNAL_OPENING] for character state
-   - INTENSITY TARGET: 4-6/10
+1. **开场钩子(0-20% - 中等强度)：** 引人入胜但不压倒
+   - 如不是第一章则连接上一章
+   - 快速建立当前情况
+   - 用[DESCRIPTION_OPENING]表示设定，[INTERNAL_OPENING]表示角色状态
+   - 强度目标：4-6/10
 
-2. **RISING ACTION (20-60% - Variable Intensity):** Build tension with breathing moments
-   - Use [DIALOGUE_X] slots for character interactions
-   - Use [ACTION_X] slots for physical events
-   - Use [INTERNAL_X] slots for character reactions
-   - Include one calm beat every 2-3 high-tension slots
-   - INTENSITY TARGET: 3-7/10 (varied)
+2. **上升动作(20-60% - 可变强度)：** 在呼吸时刻中建立紧张
+   - 用[DIALOGUE_X]槽位表示角色互动
+   - 用[ACTION_X]槽位表示肢体事件
+   - 用[INTERNAL_X]槽位表示角色反应
+   - 每2-3个高紧张槽位包含一个平静节拍
+   - 强度目标：3-7/10（变化的）
 
-3. **CLIMAX (70-80% - Peak Intensity):** Introduce the chapter's main challenge
-   - Mark the key turning point clearly
-   - Use [DIALOGUE_CONFLICT] for confrontational scenes
-   - Use [ACTION_CLIMAX] for peak action
-   - INTENSITY TARGET: 8-10/10
+3. **高潮(70-80% - 峰值强度)：** 引入章节的主要挑战
+   - 清晰标记关键转折点
+   - 用[DIALOGUE_CONFLICT]表示冲突场景
+   - 用[ACTION_CLIMAX]表示高潮动作
+   - 强度目标：8-10/10
 
-4. **RESOLUTION/HOOK (80-100% - Controlled Decrease):** End with forward momentum
-   - Resolve immediate chapter conflict
-   - Create hook for next chapter
-   - Use [TRANSITION_END] for chapter closing
-   - INTENSITY TARGET: 5-7/10
+4. **收束/钩子(80-100% - 受控下降)：** 以前进动力结束
+   - 解决当前章节冲突
+   - 为下一章创造钩子
+   - 用[TRANSITION_END]表示章节结尾
+   - 强度目标：5-7/10
 
-**SLOT DISTRIBUTION TARGETS:**
-Target chapter length: ${input.targetLength} words
+**槽位分配目标：**
+目标章节长度：${input.targetLength} 字
 
-For this length, aim for:
-- Dialogue slots: ${Math.ceil(input.targetLength / 500)}-${Math.ceil(input.targetLength / 400)} (conversations and character interactions)
-- Action slots: ${Math.ceil(input.targetLength / 1000)}-${Math.ceil(input.targetLength / 600)} (physical events and movement)
-- Internal slots: ${Math.ceil(input.targetLength / 1000)}-${Math.ceil(input.targetLength / 800)} (character thoughts and emotional reactions)
-- Description slots: ${Math.ceil(input.targetLength / 800)}-${Math.ceil(input.targetLength / 600)} (atmosphere, environment, sensory details)
-- Transition slots: ${Math.ceil(input.targetLength / 1200)}-${Math.ceil(input.targetLength / 1000)} (scene changes and flow connections)
+对于此长度，目标为：
+- 对话槽位：${Math.ceil(input.targetLength / 500)}-${Math.ceil(input.targetLength / 400)}个（对话和角色互动）
+- 动作槽位：${Math.ceil(input.targetLength / 1000)}-${Math.ceil(input.targetLength / 600)}个（肢体事件和移动）
+- 内心槽位：${Math.ceil(input.targetLength / 1000)}-${Math.ceil(input.targetLength / 800)}个（角色想法和情感反应）
+- 描写槽位：${Math.ceil(input.targetLength / 800)}-${Math.ceil(input.targetLength / 600)}个（氛围、环境、感官细节）
+- 过渡槽位：${Math.ceil(input.targetLength / 1200)}-${Math.ceil(input.targetLength / 1000)}个（场景变化和流畅连接）
 
-NOTE: These are MINIMUM targets. Create MORE slots if needed to reach target length naturally.
+注意：这些是最低目标。如需要可创建更多槽位以自然达到目标长度。
 
-**OUTPUT FORMAT:**
-Create a flowing narrative framework that reads naturally while clearly marking where specialist content should be inserted. Each slot should have a brief indication of what type of content is needed.
+**输出格式：**
+创建一个读起来自然的流畅叙事框架，同时清晰标记专家内容应插入的位置。每个槽位应简要说明需要什么类型的内容。
 
-**EXAMPLE STRUCTURE:**
-"Hero entered the tavern. [DESCRIPTION_TAVERN_ATMOSPHERE] The barkeep's reaction was immediate. [DIALOGUE_BARKEEP_GREETING] Something about his manner set off alarm bells. [INTERNAL_HERO_SUSPICION]
+**结构示例：**
+"他推开酒馆的门。[DESCRIPTION_TAVERN_ATMOSPHERE] 掌柜的反应很迅速。[DIALOGUE_BARKEEP_GREETING] 他的态度有些不对劲。[INTERNAL_HERO_SUSPICION]
 
-The conversation took an unexpected turn. [DIALOGUE_REVELATION] [INTERNAL_HERO_REACTION] Without warning, the situation escalated. [ACTION_CONFRONTATION]
+对话出现了意想不到的转折。[DIALOGUE_REVELATION] [INTERNAL_HERO_REACTION] 毫无预警，局面升级了。[ACTION_CONFRONTATION]
 
-[TRANSITION_ESCAPE] The chapter ends with [DESCRIPTION_CONSEQUENCES] and [INTERNAL_RESOLVE]."
+[TRANSITION_ESCAPE] 章节以[DESCRIPTION_CONSEQUENCES]和[INTERNAL_RESOLVE]结束。"
 
-WRITE THE COMPLETE PROSE CHAPTER SKELETON NOW - start immediately with narrative text containing [SLOT] markers:`;
+现在立即写完整的散文章节骨架 - 以包含[SLOT]标记的叙事文本立即开始：`;
 
     return { systemPrompt, userPrompt };
   }
 
   private formatChapterPlan(plan: ParsedChapterPlan): string {
-    return `Title: ${plan.title}
-Summary: ${plan.summary}
-Scene Breakdown: ${plan.sceneBreakdown}
-Conflict Type: ${plan.conflictType}
-Tension Level: ${plan.tensionLevel}/10
-Moral Dilemma: ${plan.moralDilemma}
-Character Complexity: ${plan.characterComplexity}
-Consequences: ${plan.consequencesOfChoices}
-Target Word Count: ${plan.targetWordCount || 'Not specified'}
-Opening Hook: ${plan.openingHook || 'Not specified'}
-Climax Moment: ${plan.climaxMoment || 'Not specified'}
-Chapter Ending: ${plan.chapterEnding || 'Not specified'}`;
+    return `标题：${plan.title}
+概要：${plan.summary}
+场景拆解：${plan.sceneBreakdown}
+冲突类型：${plan.conflictType}
+紧张度：${plan.tensionLevel}/10
+道德困境：${plan.moralDilemma}
+角色复杂性：${plan.characterComplexity}
+后果：${plan.consequencesOfChoices}
+目标字数：${plan.targetWordCount || '未指定'}
+开场钩子：${plan.openingHook || '未指定'}
+高潮时刻：${plan.climaxMoment || '未指定'}
+章节结尾：${plan.chapterEnding || '未指定'}`;
   }
 
   private formatDetailedScenes(plan: ParsedChapterPlan): string {
     if (!plan.detailedScenes || plan.detailedScenes.length === 0) {
-      return 'No detailed scenes specified';
+      return '未指定详细场景';
     }
 
     return plan.detailedScenes.map((scene, index) =>
-      `Scene ${index + 1} (${scene.sceneId}):
-  Location: ${scene.location}
-  Participants: ${scene.participants.join(', ')}
-  Objective: ${scene.objective}
-  Conflict: ${scene.conflict}
-  Outcome: ${scene.outcome}
-  Duration: ${scene.duration}
-  Mood: ${scene.mood}
-  Key Moments: ${scene.keyMoments.join('; ')}`
+      `场景 ${index + 1}（${scene.sceneId}）：
+  地点：${scene.location}
+  参与者：${scene.participants.join('、')}
+  目标：${scene.objective}
+  冲突：${scene.conflict}
+  结果：${scene.outcome}
+  时长：${scene.duration}
+  氛围：${scene.mood}
+  关键时刻：${scene.keyMoments.join('；')}`
     ).join('\n\n');
   }
 
   private formatChapterEvents(plan: ParsedChapterPlan): string {
     if (!plan.chapterEvents || plan.chapterEvents.length === 0) {
-      return 'No specific events planned';
+      return '未规划具体事件';
     }
 
     return plan.chapterEvents.map((event, index) =>
-      `Event ${index + 1} (${event.eventType.toUpperCase()}):
+      `事件 ${index + 1}（${event.eventType.toUpperCase()}）：
   ${event.description}
-  Participants: ${event.participants.join(', ')}
-  Emotional Impact: ${event.emotionalImpact}/10
-  Plot Significance: ${event.plotSignificance}
-  Consequences: ${event.consequences.join('; ')}`
+  参与者：${event.participants.join('、')}
+  情感影响：${event.emotionalImpact}/10
+  情节重要性：${event.plotSignificance}
+  后果：${event.consequences.join('；')}`
     ).join('\n\n');
   }
 
   private formatDialogueBeats(plan: ParsedChapterPlan): string {
     if (!plan.dialogueBeats || plan.dialogueBeats.length === 0) {
-      return 'No specific dialogue beats planned';
+      return '未规划具体对话节拍';
     }
 
     return plan.dialogueBeats.map((beat, index) =>
-      `Dialogue Beat ${index + 1}:
-  Purpose: ${beat.purpose}
-  Participants: ${beat.participants.join(', ')}
-  Subtext: ${beat.subtext}
-  Revelations: ${beat.revelations.join('; ')}
-  Tensions: ${beat.tensions.join('; ')}
-  Emotional Shifts: ${beat.emotionalShifts.join('; ')}`
+      `对话节拍 ${index + 1}：
+  目的：${beat.purpose}
+  参与者：${beat.participants.join('、')}
+  潜台词：${beat.subtext}
+  揭示：${beat.revelations.join('；')}
+  紧张点：${beat.tensions.join('；')}
+  情感转变：${beat.emotionalShifts.join('；')}`
     ).join('\n\n');
   }
 
   private formatCharacterArcs(plan: ParsedChapterPlan): string {
     if (!plan.characterArcs || plan.characterArcs.length === 0) {
-      return 'No specific character arcs planned';
+      return '未规划具体角色弧线';
     }
 
     return plan.characterArcs.map((arc, index) =>
-      `${arc.character}'s Arc:
-  Start State: ${arc.startState}
-  End State: ${arc.endState}
-  Growth: ${arc.growth}
-  Key Moments: ${arc.keyMoments.join('; ')}
-  Internal Conflicts: ${arc.internalConflicts.join('; ')}
-  Relationships: ${arc.relationships}`
+      `${arc.character}的弧线：
+  初始状态：${arc.startState}
+  结束状态：${arc.endState}
+  成长：${arc.growth}
+  关键时刻：${arc.keyMoments.join('；')}
+  内部冲突：${arc.internalConflicts.join('；')}
+  关系：${arc.relationships}`
     ).join('\n\n');
   }
 
@@ -364,7 +365,8 @@ export class CharacterAgent {
     console.log(`👥 Character Agent generating dialogue and development for Chapter ${input.chapterNumber}`);
 
     const prompt = this.buildCharacterPrompt(input);
-    const characterContent = await generateGeminiText(
+    const characterContent = await generateText(
+      'character_agent',
       prompt.userPrompt,
       prompt.systemPrompt,
       undefined,
@@ -389,177 +391,177 @@ export class CharacterAgent {
     const genreGuidelines = input.genre ? getGenreGuidelines(input.genre) : '';
     const genreNote = input.genre ? `Writing in ${input.genre.toUpperCase()} genre` : 'Using general fiction techniques';
     
-    const systemPrompt = `You are a character development specialist and dialogue expert. Your job is to write authentic, emotionally resonant dialogue and internal character moments.
+    const systemPrompt = `你是角色发展和对话专家。你的工作是写出真实、情感共鸣的对话和角色内心时刻。
 
 ${genreNote}
 
-${genreGuidelines ? `**GENRE-SPECIFIC GUIDELINES:**\n${genreGuidelines}\n` : ''}
+${genreGuidelines ? `**类型特定指南：**\n${genreGuidelines}\n` : ''}
 
-**UNIVERSAL DIALOGUE PRINCIPLES:**
+**通用对话原则：**
 
-**DIALOGUE WITH SUBTEXT:**
-Every line should carry weight beyond its literal meaning. Characters speak in layers - what they say, what they mean, and what they hide.
+**有潜台词的对话：**
+每句话都应承载超越字面意义的分量。角色在多层次说话 - 他们说的、他们的意思、他们隐藏的。
 
-Example:
-"You speak of justice as if it were bread," she said quietly.
-"Perhaps because both feed the hungry," he replied.
-"And both can grow stale if left too long."
-His smile never reached his eyes. "Then we must consume them quickly, my lady."
+示例：
+"你说正义好像它是面包一样，"她轻声说。
+"也许因为两者都能喂饱饥饿的人，"他回答。
+"而且放太久两者都会变味。"
+他的笑容没到达眼底。"那我们得赶紧享用了。"
 
-**INTERNAL MONOLOGUE:**
-Show character thoughts through physical metaphors and sensory details. Emotions should feel tangible.
+**内心独白：**
+通过身体隐喻和感官细节展示角色想法。情感应该可触摸。
 
-Example:
-The memory clung to her like smoke from a dying fire. Each time she tried to forget, it curled back into her lungs, acrid and persistent. Duty had been her compass once, but now the needle spun wildly, pointing toward nothing but shadows.
+示例：
+记忆像将熄之火的烟雾缠绕着她。每次她试图忘记，它就卷回她的肺里，辛辣而执着。责任曾是她的指南针，但现在指针疯狂旋转，指向虚无。
 
-**EMOTIONAL COMPLEXITY:**
-Characters should contain contradictions. Heroes have flaws, villains have motivations, and everyone pays prices for their choices.
+**情感复杂性：**
+角色应包含矛盾。英雄有缺陷，反派有动机，每个人都为选择付出代价。
 
-CORE PRINCIPLES:
-- Every line of dialogue must have SUBTEXT - characters rarely say exactly what they mean
-- Show character complexity through contradictions and unexpected reactions
-- Use natural speech patterns - people interrupt, hesitate, misunderstand
-- Emotional authenticity over literary beauty
-- Each character has a unique voice and speech pattern
+核心原则：
+- 每句对话都必须有潜台词 - 角色很少说出本意
+- 通过矛盾和意外反应展示角色复杂性
+- 使用自然语言模式 - 人们会打断、犹豫、误解
+- 情感真实性优于文学美感
+- 每个角色有独特的声音和说话模式
 
-CRITICAL SHOW VS TELL RULES:
-- NEVER write "she felt [emotion]" - show it through actions, dialogue, physical reactions
-- NEVER write "he looked [emotion]" - describe specific physical details instead
-- NEVER write "they seemed [state]" - demonstrate through behavior and speech
-- ALWAYS show emotions through: facial expressions, body language, speech patterns, actions
-- Use physical metaphors for emotions: "anger burned like acid", "fear spread like frost"
+关键的展现vs告知规则：
+- 绝不写"她感到[情绪]" - 通过动作、对话、身体反应展示
+- 绝不写"他看起来[情绪]" - 描述具体的身体细节
+- 绝不写"他们似乎[状态]" - 通过行为和言语展示
+- 始终通过表情、肢体语言、说话方式、动作展示情感
+- 用身体隐喻表达情感："愤怒像酸液灼烧"、"恐惧像霜一样蔓延"
 
-REPETITION AWARENESS:
-- Avoid overusing words like: settled, heavy, sharp, cold, deep
-- Vary sentence beginnings - don't start every sentence with "Her [body part]" or "She [action]"
-- Replace common phrases: "breath hitched" → "breath caught/stopped/snagged"
-- Avoid clichés: "knot in stomach", "heart skipped", "time stood still"
+重复意识：
+- 避免过度使用："沉重"、"锐利"、"冰冷"、"深沉"
+- 变化句子开头 - 不要每句都以"她的[身体部位]"或"她[动作]"开始
+- 替换常见表达："呼吸一窒"→"呼吸停滞/卡住/凝固"
+- 避免陈词滥调："心如刀割"、"心跳漏了一拍"、"时间静止"
 
-CRITICAL: You will receive specific slot requirements. Write content for each slot that fits seamlessly into the narrative structure.`;
+关键：你将收到特定的槽位要求。为每个槽位写出无缝融入叙事结构的内容。`;
 
-    const userPrompt = `Generate character content for Chapter ${input.chapterNumber}: "${input.chapterPlan.title}"
+    const userPrompt = `为第 ${input.chapterNumber} 章生成角色内容："${input.chapterPlan.title}"
 
-**STORY OUTLINE - CHARACTER ARC CONTEXT:**
+**故事大纲 - 角色弧线背景：**
 ${input.storyOutline}
 
-**CHARACTER CONTEXT:**
-Active Characters: ${input.context.activeCharacters.join(', ')}
+**角色背景：**
+活跃角色：${input.context.activeCharacters.join('、')}
 
-**CHARACTER STATES:**
+**角色状态：**
 ${this.formatCharacterStates(input.context.characterStates)}
 
-**CHAPTER EMOTIONAL JOURNEY:**
+**章节情感旅程：**
 ${input.chapterPlan.moralDilemma}
-Character Complexity Focus: ${input.chapterPlan.characterComplexity}
+角色复杂性聚焦：${input.chapterPlan.characterComplexity}
 
-**CRITICAL:** Character dialogue and thoughts must be consistent with the overall character arcs described in the story outline. Ensure character motivations, speech patterns, and emotional responses align with their established personalities and growth trajectories.
+**关键：** 角色对话和想法必须与故事大纲中描述的整体角色弧线一致。确保角色动机、说话模式和情感反应与已建立的性格和成长轨迹吻合。
 
-**DIALOGUE SLOTS TO FILL:**
-${input.structureSlots.dialogueSlots.map((slot, i) => `${i+1}. [${slot}] - Purpose: ${this.inferDialoguePurpose(slot)}`).join('\n')}
+**需要填充的对话槽位：**
+${input.structureSlots.dialogueSlots.map((slot, i) => `${i+1}. [${slot}] - 目的：${this.inferDialoguePurpose(slot)}`).join('\n')}
 
-**INTERNAL THOUGHT SLOTS TO FILL:**
-${input.structureSlots.internalSlots.map((slot, i) => `${i+1}. [${slot}] - Focus: ${this.inferInternalFocus(slot)}`).join('\n')}
+**需要填充的内心想法槽位：**
+${input.structureSlots.internalSlots.map((slot, i) => `${i+1}. [${slot}] - 聚焦：${this.inferInternalFocus(slot)}`).join('\n')}
 
-**DIALOGUE WRITING GUIDELINES:**
+**对话写作指南：**
 
-1. **AUTHENTIC SPEECH:**
-   - Use contractions, incomplete sentences, verbal tics
-   - Include interruptions, overlapping speech, mishearing
-   - Each character has distinct vocabulary and rhythm
-   - Add realistic "um," "uh," pauses, and trailing off
+1. **真实言语：**
+   - 使用缩略、不完整句子、口头禅
+   - 包含打断、插嘴、听错
+   - 每个角色有独特的词汇和节奏
+   - 添加真实的"嗯"、"啊"、停顿和话尾淡出
 
-2. **SUBTEXT MASTERY:**
-   - Characters say one thing, mean another
-   - Emotional undercurrents in every exchange
-   - Unspoken tensions and desires
-   - What they DON'T say is as important as what they do
+2. **潜台词掌握：**
+   - 角色说一套做一套
+   - 每次交流都有情感暗流
+   - 未说出的紧张和欲望
+   - 他们没说的和说了的一样重要
 
-3. **EMOTIONAL AUTHENTICITY:**
-   - Mix contradictory emotions (angry but hurt, excited but scared)
-   - Physical reactions to emotions (clenched jaw, fidgeting hands)
-   - Characters don't always understand their own feelings
-   - Realistic emotional progression, not instant changes
+3. **情感真实性：**
+   - 混合矛盾情绪（愤怒但受伤、兴奋但害怕）
+   - 情绪的身体反应（咬紧下巴、坐立不安的手）
+   - 角色不总是理解自己的感受
+   - 真实的情感渐进，不是瞬间改变
 
-4. **CHARACTER VOICE DISTINCTION:**
-   - Unique speech patterns for each character
-   - Different vocabulary levels and preferences
-   - Distinct ways of avoiding direct answers
-   - Personal verbal habits and mannerisms
+4. **角色声音区分：**
+   - 每个角色独特的说话模式
+   - 不同的词汇水平和偏好
+   - 独特的回避直接回答方式
+   - 个人口头习惯和小动作
 
-**INTERNAL THOUGHT GUIDELINES:**
+**内心想法指南：**
 
-1. **STREAM OF CONSCIOUSNESS:**
-   - Natural, unfiltered thoughts
-   - Include random observations unrelated to plot
-   - Mix important realizations with trivial concerns
-   - Show how minds actually work - not linear
+1. **意识流：**
+   - 自然、未过滤的想法
+   - 包含与情节无关的随机观察
+   - 混合重要领悟和琐碎关注
+   - 展示思维的真实运作方式 - 非线性的
 
-2. **EMOTIONAL COMPLEXITY:**
-   - Acknowledge contradictory feelings
-   - Show self-doubt and confusion
-   - Include physical sensations tied to emotions
-   - Honest assessment of motivations
+2. **情感复杂性：**
+   - 承认矛盾的感受
+   - 展示自我怀疑和困惑
+   - 包含与情绪相连的身体感觉
+   - 诚实评估动机
 
-3. **CHARACTER GROWTH:**
-   - Show internal resistance to change
-   - Gradual shifts in perspective
-   - Old patterns of thinking vs new insights
-   - Internal arguments and justifications
+3. **角色成长：**
+   - 展示对改变的内在抗拒
+   - 渐进的观点转变
+   - 旧思维模式vs新洞察
+   - 内心争论和自我辩解
 
-4. **CONTENT LIMITS:**
-   - Keep internal monologues under 150 words per slot
-   - Break up long thoughts with micro-actions (breath, glance, shift)
-   - Avoid overwhelming blocks of introspection
-   - Mix thoughts with immediate physical sensations
+4. **内容限制：**
+   - 每个槽位的内心独白控制在150字以内
+   - 用微动作打断长思考（呼吸、一瞥、挪动）
+   - 避免压倒性的内省长段
+   - 将想法与即时身体感觉混合
 
-**QUALITY STANDARDS:**
-- FORBIDDEN PHRASES: "she felt", "he looked", "seemed like", "appeared to be"
-- REQUIRED: Show emotions through specific physical actions and dialogue
-- WORD VARIATION: Use synonyms for repeated words, especially emotional descriptors
-- SENTENCE VARIETY: Mix short punchy sentences with longer flowing ones
-- RELEVANCE: In high-tension scenes, avoid mundane details (dinner, cleaning, trivial observations)
+**质量标准：**
+- 禁用表达："她感到"、"他看起来"、"似乎"、"好像"
+- 要求：通过具体的身体动作和对话展示情绪
+- 词汇变化：为重复词使用同义词，尤其是情感描述词
+- 句式变化：混合短促有力的句子和较长流畅的句子
+- 相关性：在高紧张场景中，避免平凡细节（晚餐、打扫、琐碎观察）
 
-**OUTPUT FORMAT - CRITICAL REQUIREMENTS:**
+**输出格式 - 关键要求：**
 
-⚠️ MANDATORY FORMAT - DO NOT DEVIATE:
+⚠️ 强制格式 - 不要偏离：
 
-You MUST output ONLY slot content in this EXACT format:
+你必须只以这个精确格式输出槽位内容：
 
-[SLOT_NAME]: Content goes here on the same line or continuing lines
+[SLOT_NAME]: 内容在同一行或续行
 
-[NEXT_SLOT_NAME]: Next content here
+[NEXT_SLOT_NAME]: 下一个内容
 
-DO NOT:
-- Add introductions like "Here are the slots"
-- Add explanations or commentary
-- Use numbered lists
-- Use markdown headers
-- Embed slots in narrative prose
+不要：
+- 添加介绍如"以下是槽位"
+- 添加解释或评论
+- 使用编号列表
+- 使用markdown标题
+- 在叙事散文中嵌入槽位
 
-DO:
-- Start each slot with [SLOT_NAME]: immediately followed by content
-- Put content on the same line or next line after the slot marker
-- Separate different slots with blank lines
+要：
+- 每个槽位以[SLOT_NAME]:开始，紧跟内容
+- 内容在同一行或标记后下一行
+- 用空行分隔不同槽位
 
-**CORRECT EXAMPLES:**
+**正确示例：**
 
-[DIALOGUE_BARKEEP_GREETING]: "'You're early,' Marcus said, not looking up from the glass he was cleaning. His tone suggested early wasn't necessarily good."
+[DIALOGUE_BARKEEP_GREETING]: "你来早了，"掌柜头也不抬地说，手里还在擦杯子。他的语气暗示早到不一定是好事。
 
-[INTERNAL_HERO_SUSPICION]: Something was off. Maybe it was the way Marcus kept his eyes down, or how his shoulders had tensioned the moment she walked in. Or maybe she was just paranoid again. God, she hoped she was just paranoid.
+[INTERNAL_HERO_SUSPICION]: 有什么不对劲。也许是掌柜不肯抬头的样子，也许是她一进门他肩膀就绷紧了。又或者她只是太多疑了。天，她真希望只是自己多想。
 
-[DIALOGUE_CONFRONTATION]: "We need to talk," she said, her voice low but firm. "Now."
+[DIALOGUE_CONFRONTATION]: "我们得谈谈，"她说，声音低沉但坚定。"现在。"
 
-**WRONG EXAMPLES (DO NOT DO THIS):**
+**错误示例（不要这样做）：**
 
-❌ Here are the dialogue slots:
-1. [DIALOGUE_GREETING] - Marcus greets her
+❌ 以下是对话槽位：
+1. [DIALOGUE_GREETING] - 掌柜问候她
 
-❌ The character enters. [INTERNAL_REACTION] She feels nervous.
+❌ 角色进入。[INTERNAL_REACTION] 她感到紧张。
 
 ❌ ## DIALOGUE_GREETING
-Marcus said hello.
+掌柜打了招呼。
 
-**NOW GENERATE ALL SLOT CONTENT IN THE CORRECT FORMAT:**`;
+**现在以正确格式生成所有槽位内容：**`;
 
     return { systemPrompt, userPrompt };
   }
@@ -571,19 +573,17 @@ Marcus said hello.
   }
 
   private inferDialoguePurpose(slotId: string): string {
-    // Infer purpose from slot name - could be enhanced
-    if (slotId.includes('GREETING')) return 'Initial interaction/establishing mood';
-    if (slotId.includes('CONFLICT')) return 'Confrontation/tension escalation';
-    if (slotId.includes('REVELATION')) return 'Information reveal/plot advancement';
-    return 'Character interaction and development';
+    if (slotId.includes('GREETING')) return '初始互动/建立氛围';
+    if (slotId.includes('CONFLICT')) return '对抗/紧张升级';
+    if (slotId.includes('REVELATION')) return '信息揭示/情节推进';
+    return '角色互动与发展';
   }
 
   private inferInternalFocus(slotId: string): string {
-    // Infer focus from slot name
-    if (slotId.includes('SUSPICION')) return 'Growing doubt and uncertainty';
-    if (slotId.includes('REACTION')) return 'Processing new information';
-    if (slotId.includes('RESOLVE')) return 'Decision-making and determination';
-    return 'Character emotional state and thoughts';
+    if (slotId.includes('SUSPICION')) return '渐增的疑虑和不确定';
+    if (slotId.includes('REACTION')) return '处理新信息';
+    if (slotId.includes('RESOLVE')) return '决策与决心';
+    return '角色情感状态和想法';
   }
 
   private parseCharacterOutput(content: string, input: CharacterAgentInput): CharacterAgentOutput {
@@ -902,7 +902,8 @@ export class SceneAgent {
     console.log(`🎬 Scene Agent generating atmosphere and action for Chapter ${input.chapterNumber}`);
 
     const prompt = this.buildScenePrompt(input);
-    const sceneContent = await generateGeminiText(
+    const sceneContent = await generateText(
+      'scene_agent',
       prompt.userPrompt,
       prompt.systemPrompt,
       undefined,
@@ -927,188 +928,188 @@ export class SceneAgent {
     const genreGuidelines = input.genre ? getGenreGuidelines(input.genre) : '';
     const genreNote = input.genre ? `Writing in ${input.genre.toUpperCase()} genre` : 'Using general fiction techniques';
     
-    const systemPrompt = `You are a master of atmospheric writing and action sequences. Your specialty is creating vivid, immersive scenes that engage all the senses and make readers feel present in the story.
+    const systemPrompt = `你是氛围写作和动作序列大师。你的专长是创造生动、沉浸式的场景，调动所有感官，让读者身临其境。
 
 ${genreNote}
 
-${genreGuidelines ? `**GENRE-SPECIFIC GUIDELINES:**\n${genreGuidelines}\n` : ''}
+${genreGuidelines ? `**类型特定指南：**\n${genreGuidelines}\n` : ''}
 
-**UNIVERSAL ATMOSPHERIC TECHNIQUES:**
+**通用氛围技巧：**
 
-**ENVIRONMENTAL STORYTELLING:**
-Setting and atmosphere should enhance mood and hint at narrative developments. The environment reflects the story's emotional state.
+**环境叙事：**
+设定和氛围应增强情绪并暗示叙事发展。环境反映故事的情感状态。
 
-Example:
-The evening hung like tarnished copper above the battlements, pregnant with unshed rain. Along the ramparts, torches wavered, their flames pulled eastward by wind that tasted of iron and distant storms. The sea beyond churned restless as a sleeper's dream, its waves the color of old blood.
+示例：
+暮色像锈蚀的铜片悬在城墙上方，蕴含着未降的雨意。城垛上，火把摇曳，火焰被带着铁锈和远方风暴味道的风拉向东方。远处的海面躁动不安如梦中之人，海浪泛着旧血的颜色。
 
-**SENSORY LAYERING:**
-Build atmosphere through multiple senses working together. Each detail should feel lived-in and specific.
+**感官层叠：**
+通过多种感官协同构建氛围。每个细节都应该具体而有生活感。
 
-Example:
-The great hall reeked of cold mutton and dying fires. Smoke hung in the rafters like gray ghosts, and beneath it all, the sweet-sick smell of fear. The stones beneath her feet were slick with condensation that felt cold as tears.
+示例：
+大厅弥漫着冷羊肉和将熄炉火的气味。烟雾像灰色幽灵悬在横梁间，在这一切之下，是恐惧甜腻而令人作呕的味道。她脚下的石板因凝结的水珠而湿滑，冷得像泪水。
 
-**ACTION WITH CONSEQUENCE:**
-Physical action should have weight and aftermath. Every movement costs something.
+**有后果的动作：**
+肢体动作应有分量和后果。每个动作都有代价。
 
-Example:
-Steel rang against steel, the impact jarring up through his arm like lightning. His opponent stumbled, and for a heartbeat the world narrowed to that one opening. Then blood, hot and copper-bright, and the terrible weight of what came after.
+示例：
+钢铁交击，冲力沿手臂像闪电般传上来。对手踉跄后退，一个心跳的时间世界缩小到那一个破绽。然后是血，滚烫而铜亮，以及随之而来的可怕重量。
 
-CORE PRINCIPLES:
-- Use ALL FIVE SENSES, not just sight and sound
-- Specific details over general descriptions
-- Connect sensory details to character emotions
-- Action sequences focus on IMPACT and MOVEMENT
-- Environment reflects and amplifies story mood
-- Avoid purple prose - every detail must serve the story
+核心原则：
+- 使用全部五感，不只视觉和听觉
+- 具体细节优于笼统描写
+- 将感官细节连接到角色情感
+- 动作序列聚焦冲击力和运动
+- 环境反映和放大故事情绪
+- 避免华丽辞藻 - 每个细节都必须服务故事
 
-PACING BY SCENE TYPE:
-- ACTION scenes: Short, punchy sentences (8-12 words). Rapid-fire verbs. Minimal adjectives.
-- EMOTIONAL scenes: Longer, flowing sentences (15-20 words). Rich sensory details. Atmospheric depth.
-- REVELATION scenes: Medium sentences (12-15 words). Focus on specific concrete details.
-- SETUP scenes: Varied sentence length. Balance action and description.
+场景类型节奏：
+- 动作场景：短促有力的句子（8-12字）。密集动词。最少形容词。
+- 情感场景：较长流畅的句子（15-20字）。丰富感官细节。氛围深度。
+- 揭示场景：中等句子（12-15字）。聚焦具体细节。
+- 铺垫场景：变化的句子长度。平衡动作和描写。
 
-REPETITION AWARENESS:
-- Avoid overusing: settled, heavy, sharp, cold, thick, dense
-- Vary atmospheric words: oppressive/crushing/suffocating instead of "heavy"
-- Replace common phrases: "hung in the air" → "pressed down/drifted/lingered"
-- NO clichés: "silence hung heavy", "time stood still", "air thick with tension"
+重复意识：
+- 避免过度使用："沉重"、"锐利"、"冰冷"、"浓密"
+- 变化氛围词："压抑/碾压/令人窒息"代替"沉重"
+- 替换常见表达："弥漫在空气中"→"压下来/飘散/萦绕"
+- 不要陈词滥调："死一般的沉默"、"时间静止"、"空气中弥漫着紧张"
 
-CONTEXT RELEVANCE:
-- HIGH TENSION scenes: NO mundane details (cleaning, dinner, trivial observations)
-- CALM scenes: Appropriate place for everyday details and micro-observations
-- Match detail importance to scene urgency
+情境相关性：
+- 高紧张场景：不要平凡细节（打扫、晚餐、琐碎观察）
+- 平静场景：适合日常细节和微观察的地方
+- 细节重要性匹配场景紧迫性
 
-CRITICAL: You will write content for specific slots that must integrate seamlessly with dialogue and character moments from other specialists.`;
+关键：你将为特定槽位写内容，必须与其他专家的对话和角色时刻无缝整合。`;
 
-    const userPrompt = `Generate scene content for Chapter ${input.chapterNumber}: "${input.chapterPlan.title}"
+    const userPrompt = `为第 ${input.chapterNumber} 章生成场景内容："${input.chapterPlan.title}"
 
-**STORY OUTLINE - WORLD & ATMOSPHERE CONTEXT:**
+**故事大纲 - 世界与氛围背景：**
 ${input.storyOutline}
 
-**SCENE TYPE DETECTED:** ${this.detectSceneType(input.chapterPlan)}
-**REQUIRED PACING:** ${this.getPacingInstructions(input.chapterPlan)}
+**检测到的场景类型：** ${this.detectSceneType(input.chapterPlan)}
+**所需节奏：** ${this.getPacingInstructions(input.chapterPlan)}
 
-**SETTING CONTEXT:**
-Primary Location: ${input.context.primaryLocation.name}
-Atmosphere Required: ${input.context.atmosphereRequirements.mood}
-Tension Level: ${input.context.atmosphereRequirements.tension}
-Security Level: ${input.context.primaryLocation.securityLevel}
+**设定背景：**
+主要地点：${input.context.primaryLocation.name}
+需要的氛围：${input.context.atmosphereRequirements.mood}
+紧张度：${input.context.atmosphereRequirements.tension}
+安全等级：${input.context.primaryLocation.securityLevel}
 
-**SENSORY FOCUS:**
-Primary Senses: ${input.context.atmosphereRequirements.sensoryFocus.join(', ')}
+**感官聚焦：**
+主要感官：${input.context.atmosphereRequirements.sensoryFocus.join('、')}
 
-**CRITICAL:** Scene descriptions must be consistent with the world, tone, and atmosphere established in the story outline. Ensure environmental details, cultural elements, and atmospheric descriptions align with the overall story setting and genre.
+**关键：** 场景描写必须与故事大纲中建立的世界、语气和氛围一致。确保环境细节、文化元素和氛围描写与整体故事设定和类型吻合。
 
-**DESCRIPTION SLOTS TO FILL:**
-${input.structureSlots.descriptionSlots.map((slot, i) => `${i+1}. [${slot}] - Type: ${this.inferDescriptionType(slot)}`).join('\n')}
+**需要填充的描写槽位：**
+${input.structureSlots.descriptionSlots.map((slot, i) => `${i+1}. [${slot}] - 类型：${this.inferDescriptionType(slot)}`).join('\n')}
 
-**ACTION SLOTS TO FILL:**
-${input.structureSlots.actionSlots.map((slot, i) => `${i+1}. [${slot}] - Type: ${this.inferActionType(slot)}`).join('\n')}
+**需要填充的动作槽位：**
+${input.structureSlots.actionSlots.map((slot, i) => `${i+1}. [${slot}] - 类型：${this.inferActionType(slot)}`).join('\n')}
 
-**ATMOSPHERIC WRITING GUIDELINES:**
+**氛围写作指南：**
 
-1. **FIVE-SENSE IMMERSION:**
-   - SIGHT: Specific visual details, lighting, movement
-   - SOUND: Ambient noise, specific sounds, volume, tone
-   - SMELL: Environment odors, character scents, food, decay
-   - TOUCH: Temperature, texture, weight, pressure
-   - TASTE: Air quality, stress responses, environmental taste
+1. **五感沉浸：**
+   - 视觉：具体视觉细节、光线、运动
+   - 听觉：环境噪音、特定声音、音量、语调
+   - 嗅觉：环境气味、角色气息、食物、腐朽
+   - 触觉：温度、质感、重量、压力
+   - 味觉：空气质量、压力反应、环境味道
 
-2. **SPECIFIC OVER GENERAL:**
-   - "Rust-stained iron" not "old metal"
-   - "Cigarette smoke and stale beer" not "tavern smells"
-   - "Footsteps on wet cobblestone" not "walking sounds"
-   - "Metallic taste of fear" not "was afraid"
+2. **具体优于笼统：**
+   - "锈迹斑斑的铁器"而非"旧金属"
+   - "香烟和陈啤酒的味道"而非"酒馆气味"
+   - "湿石板上的脚步声"而非"走路的声音"
+   - "恐惧的金属味"而非"害怕了"
 
-3. **EMOTIONAL RESONANCE:**
-   - Environment reflects character state
-   - Weather/atmosphere amplifies mood
-   - Sensory details trigger memories/emotions
-   - Setting becomes a character in the scene
+3. **情感共鸣：**
+   - 环境反映角色状态
+   - 天气/氛围放大情绪
+   - 感官细节触发记忆/情感
+   - 设定成为场景中的一个角色
 
-4. **ACTION WRITING PRINCIPLES:**
-   - Short, punchy sentences for fast action
-   - Focus on IMPACT and CONSEQUENCES
-   - Physical details: muscle tension, balance, momentum
-   - Show effort and physicality, not just results
+4. **动作写作原则：**
+   - 短促有力的句子用于快速动作
+   - 聚焦冲击力和后果
+   - 身体细节：肌肉紧张、平衡、动量
+   - 展示努力和身体感受，而非只是结果
 
-**SCENE CONTENT GUIDELINES:**
+**场景内容指南：**
 
-1. **ENVIRONMENTAL DESCRIPTIONS:**
-   - Layer multiple sensory details naturally
-   - Include living elements (people, animals, movement)
-   - Show how environment affects characters
-   - Use specific, concrete nouns and active verbs
+1. **环境描写：**
+   - 自然层叠多种感官细节
+   - 包含有生命的元素（人、动物、运动）
+   - 展示环境如何影响角色
+   - 使用具体名词和主动动词
 
-2. **ACTION SEQUENCES:**
-   - Build tension before the action
-   - Use sentence length to control pacing
-   - Include physical consequences and effort
-   - Show environmental interaction during action
+2. **动作序列：**
+   - 动作前建立紧张感
+   - 用句子长度控制节奏
+   - 包含身体后果和努力
+   - 展示动作中的环境互动
 
-3. **ATMOSPHERIC CONTINUITY:**
-   - Maintain sensory consistency throughout
-   - Show time progression through environment
-   - Connect scenes through atmospheric elements
-   - Use weather/lighting to enhance mood
+3. **氛围连续性：**
+   - 全程保持感官一致性
+   - 通过环境展示时间推移
+   - 通过氛围元素连接场景
+   - 用天气/光线增强情绪
 
-**OUTPUT FORMAT - CRITICAL REQUIREMENTS:**
+**输出格式 - 关键要求：**
 
-⚠️ MANDATORY FORMAT - DO NOT DEVIATE:
+⚠️ 强制格式 - 不要偏离：
 
-You MUST output ONLY slot content in this EXACT format:
+你必须只以这个精确格式输出槽位内容：
 
-[SLOT_NAME]: Content goes here on the same line or continuing lines
+[SLOT_NAME]: 内容在同一行或续行
 
-[NEXT_SLOT_NAME]: Next content here
+[NEXT_SLOT_NAME]: 下一个内容
 
-DO NOT:
-- Add introductions like "Here are the descriptions"
-- Add explanations or commentary
-- Use numbered lists
-- Use markdown headers
-- Embed slots in narrative prose
+不要：
+- 添加介绍如"以下是场景描写"
+- 添加解释或评论
+- 使用编号列表
+- 使用markdown标题
+- 在叙事散文中嵌入槽位
 
-DO:
-- Start each slot with [SLOT_NAME]: immediately followed by content
-- Put content on the same line or next line after the slot marker
-- Separate different slots with blank lines
+要：
+- 每个槽位以[SLOT_NAME]:开始，紧跟内容
+- 内容在同一行或标记后下一行
+- 用空行分隔不同槽位
 
-**CORRECT EXAMPLES:**
+**正确示例：**
 
-[DESCRIPTION_TAVERN_ATMOSPHERE]: Lamplight struggled through smoke-thick air, casting amber shadows across scarred oak tables. The smell of ale mixed with unwashed bodies and something else—something metallic that made her mouth taste like copper pennies.
+[DESCRIPTION_TAVERN_ATMOSPHERE]: 灯光在烟雾弥漫的空气中挣扎，在伤痕累累的橡木桌上投下琥珀色的影子。啤酒的味道混合着汗臭和别的什么——某种金属味，让她嘴里泛起铜钱般的味道。
 
-[ACTION_CONFRONTATION]: The chair legs scraped against stone as Marcus pushed back from the table. The sound cut through conversation like a blade, and suddenly every eye in the tavern was watching. Her hand found her dagger's hilt without conscious thought.
+[ACTION_CONFRONTATION]: 椅腿在石地上刮出刺耳的声响，掌柜猛地从桌后站起。那声音像刀刃一样切断了所有交谈，突然间酒馆里每双眼睛都看过来了。她的手不由自主地摸上了匕首的柄。
 
-[DESCRIPTION_WEATHER]: Rain hammered the cobblestones outside, each drop exploding into a thousand smaller droplets. The storm had come fast, turning the street into a river of mud and refuse.
+[DESCRIPTION_WEATHER]: 雨锤打着外面的石板路，每一滴都炸开成上千更小的水珠。暴风雨来得很快，把街道变成了泥水和垃圾的河流。
 
-**WRONG EXAMPLES (DO NOT DO THIS):**
+**错误示例（不要这样做）：**
 
-❌ Here are the scene descriptions:
-1. [DESCRIPTION_TAVERN] - The tavern is dark
+❌ 以下是场景描写：
+1. [DESCRIPTION_TAVERN] - 酒馆很暗
 
-❌ The tavern was atmospheric. [DESCRIPTION_ATMOSPHERE] Smoke filled the air.
+❌ 酒馆很有氛围。[DESCRIPTION_ATMOSPHERE] 空气中弥漫着烟。
 
 ❌ ## DESCRIPTION_TAVERN
-The tavern was crowded.
+酒馆很拥挤。
 
-**NOW GENERATE ALL SLOT CONTENT IN THE CORRECT FORMAT:**`;
+**现在以正确格式生成所有槽位内容：**`;
 
     return { systemPrompt, userPrompt };
   }
 
   private inferDescriptionType(slotId: string): string {
-    if (slotId.includes('ATMOSPHERE')) return 'Environmental atmosphere and mood';
-    if (slotId.includes('OPENING')) return 'Scene establishment and setting';
-    if (slotId.includes('CONSEQUENCES')) return 'Aftermath and environmental impact';
-    return 'Environmental description and sensory details';
+    if (slotId.includes('ATMOSPHERE')) return '环境氛围与情绪';
+    if (slotId.includes('OPENING')) return '场景建立与设定';
+    if (slotId.includes('CONSEQUENCES')) return '后果与环境影响';
+    return '环境描写与感官细节';
   }
 
   private inferActionType(slotId: string): string {
-    if (slotId.includes('CONFRONTATION')) return 'Tense physical interaction';
-    if (slotId.includes('ESCAPE')) return 'Movement and chase sequence';
-    if (slotId.includes('CLIMAX')) return 'Peak action moment';
-    return 'Physical action and movement';
+    if (slotId.includes('CONFRONTATION')) return '紧张的肢体互动';
+    if (slotId.includes('ESCAPE')) return '移动与追逐序列';
+    if (slotId.includes('CLIMAX')) return '高潮动作时刻';
+    return '肢体动作与移动';
   }
 
   private parseSceneOutput(content: string, input: SceneAgentInput): SceneAgentOutput {
@@ -1403,35 +1404,41 @@ The tavern was crowded.
     const summary = chapterPlan.summary?.toLowerCase() || '';
 
     if (title.includes('battle') || title.includes('fight') || title.includes('chase') ||
-        summary.includes('attack') || summary.includes('combat') || summary.includes('fight')) {
-      return 'ACTION';
+        title.includes('战') || title.includes('斗') || title.includes('追') ||
+        summary.includes('attack') || summary.includes('combat') || summary.includes('fight') ||
+        summary.includes('战斗') || summary.includes('攻击') || summary.includes('追逐')) {
+      return '动作';
     }
 
     if (title.includes('reveal') || title.includes('truth') || title.includes('discover') ||
-        summary.includes('revelation') || summary.includes('truth') || summary.includes('secret')) {
-      return 'REVELATION';
+        title.includes('揭') || title.includes('真相') || title.includes('发现') ||
+        summary.includes('revelation') || summary.includes('truth') || summary.includes('secret') ||
+        summary.includes('揭示') || summary.includes('真相') || summary.includes('秘密')) {
+      return '揭示';
     }
 
     if (title.includes('memory') || title.includes('emotion') || title.includes('feel') ||
-        summary.includes('emotion') || summary.includes('remember') || summary.includes('past')) {
-      return 'EMOTIONAL';
+        title.includes('记忆') || title.includes('情感') || title.includes('回忆') ||
+        summary.includes('emotion') || summary.includes('remember') || summary.includes('past') ||
+        summary.includes('情感') || summary.includes('回忆') || summary.includes('过去')) {
+      return '情感';
     }
 
-    return 'SETUP';
+    return '铺垫';
   }
 
   private getPacingInstructions(chapterPlan: any): string {
     const sceneType = this.detectSceneType(chapterPlan);
 
     switch (sceneType) {
-      case 'ACTION':
-        return 'Short punchy sentences (8-12 words). Rapid verbs. Minimal description. Focus on movement and impact.';
-      case 'EMOTIONAL':
-        return 'Longer flowing sentences (15-20 words). Rich sensory details. Deep atmospheric description.';
-      case 'REVELATION':
-        return 'Medium sentences (12-15 words). Focus on specific concrete details. Clear, precise descriptions.';
+      case '动作':
+        return '短促有力的句子（8-12字）。密集动词。最少描写。聚焦运动和冲击。';
+      case '情感':
+        return '较长流畅的句子（15-20字）。丰富感官细节。深层氛围描写。';
+      case '揭示':
+        return '中等句子（12-15字）。聚焦具体细节。清晰、精确的描写。';
       default:
-        return 'Varied sentence length. Balance between action and description based on moment.';
+        return '变化的句子长度。根据时刻在动作与描写间平衡。';
     }
   }
 }

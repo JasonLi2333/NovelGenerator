@@ -3,7 +3,7 @@
  * This is the last editing step before compilation
  */
 
-import { generateGeminiText } from '../services/geminiService';
+import { generateText } from '../services/llm';
 import { ChapterData, AgentLogEntry } from '../types';
 
 export interface ProfessionalPolishResult {
@@ -103,90 +103,89 @@ async function polishChapterProfessionally(
   totalChapters: number
 ): Promise<string> {
   
-  const polishPrompt = `You are a professional editor and stylist. Your task is to take a finished chapter and polish it so it reads like a professional novel.
+  const polishPrompt = `你是一位专业编辑和文体大师。你的任务是对已完成的章节进行润色，使其读起来像专业网文小说。
 
-**CHAPTER ${chapterNumber} of ${totalChapters}:**
+**第 ${chapterNumber} 章，共 ${totalChapters} 章：**
 
 ${content}
 
 ---
 
-**YOUR POLISHING INSTRUCTIONS:**
+**你的润色指令：**
 
-**1. PACE AND RHYTHM**
-- Break up long paragraphs (more than 5-6 sentences)
-- Alternate descriptions with short emotional beats (1-2 sentences)
-- Vary sentence length to create rhythm
-- Use short paragraphs for tense moments
+**1. 节奏与韵律**
+- 拆分长段落（超过5-6句）
+- 描写与短情感节拍（1-2句）交替
+- 变化句子长度以创造韵律
+- 紧张时刻使用短段落
 
-**2. DIALOGUE WITH SUBTEXT**
-- Eliminate direct explanations in dialogue
-- Add pauses, gestures, things left unsaid
-- Characters should rarely say everything directly
-- Show non-verbal cues: glances, silence, tone
-- Remove exposition from dialogue ("As you know, Bob...")
+**2. 有潜台词的对话**
+- 消除对话中的直接解释
+- 添加停顿、手势、欲言又止
+- 角色很少直接说出一切
+- 展示非语言线索：眼神、沉默、语气
+- 从对话中移除说明（"如你所知，鲍勃..."）
 
-**3. MOTIVATION AND DOUBT**
-- Insert internal struggle in key decisions
-- Show doubts, memories, fear before choices
-- Don't jump instantly to action — let character think
-- Show the cost of decision BEFORE it's made
+**3. 动机与怀疑**
+- 在关键决定中插入内心挣扎
+- 在选择前展示怀疑、记忆、恐惧
+- 不要立即跳到行动 — 让角色思考
+- 在做出决定之前展示决定的代价
 
-**4. ANTI-REPETITION**
-- Remove identical words in adjacent paragraphs
-- For recurring concepts (darkness, fire, fear) use varied metaphors
-- Vary synonyms
-- Don't repeat the same sentence structure consecutively
+**4. 反重复**
+- 移除相邻段落中的相同词汇
+- 对于反复出现的概念（黑暗、火焰、恐惧）使用变化的比喻
+- 变化同义词
+- 不要连续重复相同的句子结构
 
-**5. EMOTIONAL ANCHORS**
-- In each important scene, leave a small "human moment"
-- A memory, smell, gesture, detail that connects reader to character
-- Sensory details: not just sight, but sound, smell, touch
-- One concrete image is better than three abstract ones
+**5. 情感锚点**
+- 在每个重要场景中，留下一个小的"人性时刻"
+- 一个记忆、气味、手势、细节，连接读者与角色
+- 感官细节：不只是视觉，还有声音、气味、触觉
+- 一个具体意象胜过三个抽象意象
 
-**6. LAYERS OF PERCEPTION**
-- Show difference between what character sees and how they interpret it
-- Light shade of self-deception or bias
-- Subjectivity of perception: one sees threat, another sees opportunity
-- Internal monologue can contradict actions
+**6. 感知层次**
+- 展示角色所见与他们如何诠释之间的差异
+- 轻微的自我欺骗或偏见
+- 感知的主观性：一个人看到威胁，另一个看到机会
+- 内心独白可以与行动矛盾
 
-**7. FINAL POLISH**
-- Choose richer and more varied vocabulary
-- Avoid clichés and overused phrases
-- Maintain consistent style throughout chapter
-- Make text flow smoothly, without jarring transitions between scenes
-- Check that transitions between paragraphs are logical
+**7. 最终润色**
+- 选择更丰富、更多样的词汇
+- 避免陈词滥调和常用短语
+- 全章保持一致的风格
+- 使文本流畅，场景间无刺耳的过渡
+- 检查段落间的过渡是否符合逻辑
 
-**CRITICAL WORD BANS:**
-- NEVER use "obsidian" or any derivatives (obsidian-like, obsidian's, etc.)
-- NEVER use "thorn" or "thorne" or any derivatives (thorns, thorny, etc.)
-- Replace obsidian with: "black stone", "dark walls", "stone", "dark rock"
-- Replace thorn/thorne with: "spike", "sharp point", "barb", be specific
-- This is ABSOLUTE - scan entire text and remove ALL mentions
+**关键禁用词：**
+- 绝不使用"一股强大的气息""浑身一震""心中暗道""缓缓说道""目光如炬"等AI套话
+- 避免四字成语堆砌
+- 扫描全文并移除所有提及
 
-**🔧 CRITICAL: UNFILLED SLOT CLEANUP:**
-If you see any unfilled markers like [SLOT_NAME], [DESCRIPTION_X], [DIALOGUE_X], [ACTION_X], [INTERNAL_X] in the text:
-- These are ERRORS from the generation process
-- You MUST either:
-  a) Remove them completely if the text flows fine without them
-  b) Replace them with appropriate brief content that fits the context
-- DO NOT leave any [BRACKET_MARKERS] in the final text
-- This is MANDATORY - scan the entire chapter for any remaining markers
+**🔧 关键：未填充槽位清理：**
+如果你在文本中看到任何未填充的标记，如 [SLOT_NAME]、[DESCRIPTION_X]、[DIALOGUE_X]、[ACTION_X]、[INTERNAL_X]：
+- 这些是生成过程中的错误
+- 你必须：
+  a) 如果文本流畅，完全移除它们
+  b) 用适合上下文的简短内容替换它们
+- 不要在最终文本中留下任何 [方括号标记]
+- 这是强制性的 - 扫描整章查找所有剩余标记
 
-**IMPORTANT:**
-- Preserve all plot events and dialogue
-- Don't change the meaning of scenes
-- Don't add new scenes or characters
-- Focus on QUALITY OF DELIVERY, not content
-- This is final polish, not rewriting
+**重要：**
+- 保留所有情节事件和对话
+- 不要改变场景的含义
+- 不要添加新场景或角色
+- 聚焦交付质量，不是内容
+- 这是最终润色，不是重写
 
-**RETURN:**
-Polished version of the chapter. Only chapter text, no comments.`;
+**返回：**
+章节的润色版本。只有章节文本，不要评论。`;
 
-  const systemPrompt = `You are a master editor specializing in final polish of fiction. Your task is to transform good text into professional novel through work with rhythm, subtext, emotional anchors, and layers of perception.`;
+  const systemPrompt = `你是精通小说最终润色的大师级编辑。你的任务是通过韵律、潜台词、情感锚点和感知层次的工作，将好文本转化为专业网文小说。`;
 
   try {
-    const polished = await generateGeminiText(
+    const polished = await generateText(
+      'editing',
       polishPrompt,
       systemPrompt,
       undefined,

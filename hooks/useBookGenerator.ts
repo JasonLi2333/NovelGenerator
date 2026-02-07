@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Character, ChapterData, GenerationStep, ParsedChapterPlan, TimelineEntry, EmotionalArcEntry, StorySettings, AgentLogEntry, ChapterGenerationStage } from '../types';
-import { generateGeminiText, generateGeminiTextStream } from '../services/geminiService';
+import { generateText } from '../services/llm';
+import { generateGeminiTextStream } from '../services/geminiService';
 import { extractCharactersFromString, extractWorldNameFromString, extractMotifsFromString } from '../utils/parserUtils';
 import { getWritingExamplesPrompt } from '../utils/writingExamples';
 import { checkChapterConsistency } from '../utils/consistencyChecker';
@@ -26,12 +27,14 @@ const STORAGE_KEY = 'novelGeneratorState';
 const createOptimizedChapterPlanSchema = (numChapters: number): object => {
   return {
     type: SchemaType.OBJECT,
+    additionalProperties: false,
     properties: {
       chapters: {
         type: SchemaType.ARRAY,
         description: `An array of chapter plan objects, one for each of the ${numChapters} chapters.`,
         items: {
           type: SchemaType.OBJECT,
+          additionalProperties: false,
           properties: {
             // Core essentials
             title: { type: SchemaType.STRING, description: "Chapter title" },
@@ -78,12 +81,14 @@ const createOptimizedChapterPlanSchema = (numChapters: number): object => {
 const createExpandedChapterPlanSchema = (numChapters: number): object => {
   return {
     type: SchemaType.OBJECT,
+    additionalProperties: false,
     properties: {
       chapters: {
         type: SchemaType.ARRAY,
         description: `An array of chapter plan objects, one for each of the ${numChapters} chapters.`,
         items: {
           type: SchemaType.OBJECT,
+          additionalProperties: false,
           properties: {
             // CORE EXISTING FIELDS
             title: { type: SchemaType.STRING, description: "Chapter title" },
@@ -129,6 +134,7 @@ const createExpandedChapterPlanSchema = (numChapters: number): object => {
               description: "3-5 detailed scenes that make up the chapter",
               items: {
                 type: SchemaType.OBJECT,
+                additionalProperties: false,
                 properties: {
                   sceneId: { type: SchemaType.STRING, description: "Unique identifier for the scene" },
                   location: { type: SchemaType.STRING, description: "Where the scene takes place" },
@@ -158,6 +164,7 @@ const createExpandedChapterPlanSchema = (numChapters: number): object => {
               description: "Specific events that drive the narrative forward",
               items: {
                 type: SchemaType.OBJECT,
+                additionalProperties: false,
                 properties: {
                   eventId: { type: SchemaType.STRING, description: "Unique identifier" },
                   eventType: {
@@ -192,6 +199,7 @@ const createExpandedChapterPlanSchema = (numChapters: number): object => {
               description: "Planned dialogue moments with subtext and purpose",
               items: {
                 type: SchemaType.OBJECT,
+                additionalProperties: false,
                 properties: {
                   beatId: { type: SchemaType.STRING, description: "Unique identifier" },
                   purpose: { type: SchemaType.STRING, description: "What this dialogue accomplishes" },
@@ -228,6 +236,7 @@ const createExpandedChapterPlanSchema = (numChapters: number): object => {
               description: "Character emotional journeys through the chapter",
               items: {
                 type: SchemaType.OBJECT,
+                additionalProperties: false,
                 properties: {
                   character: { type: SchemaType.STRING, description: "Character name" },
                   startState: { type: SchemaType.STRING, description: "Emotional state at chapter beginning" },
@@ -258,6 +267,7 @@ const createExpandedChapterPlanSchema = (numChapters: number): object => {
               description: "Physical action and movement sequences",
               items: {
                 type: SchemaType.OBJECT,
+                additionalProperties: false,
                 properties: {
                   sequenceId: { type: SchemaType.STRING, description: "Unique identifier" },
                   description: { type: SchemaType.STRING, description: "What physical action occurs" },
@@ -549,7 +559,7 @@ const useBookGenerator = () => {
       chapters_count: chaptersCount,
       story_premise: premise
     });
-    const outlineText = await generateGeminiText(userPrompt, systemPrompt, undefined, OUTLINE_PARAMS.temperature, OUTLINE_PARAMS.topP, OUTLINE_PARAMS.topK);
+    const outlineText = await generateText('outline', userPrompt, systemPrompt, undefined, OUTLINE_PARAMS.temperature, OUTLINE_PARAMS.topP, OUTLINE_PARAMS.topK);
     if (!outlineText) throw new Error("Failed to generate story outline.");
     setCurrentStoryOutline(outlineText);
     setCurrentStep(GenerationStep.WaitingForOutlineApproval);
@@ -582,7 +592,7 @@ const useBookGenerator = () => {
         if (needsCharacters) {
           extractionPromises.push(
             extractCharactersFromString(outlineText, (prompt, system) => 
-              generateGeminiText(prompt, system, undefined, EXTRACTION_PARAMS.temperature, EXTRACTION_PARAMS.topP, EXTRACTION_PARAMS.topK)
+              generateText('character_extraction', prompt, system, undefined, EXTRACTION_PARAMS.temperature, EXTRACTION_PARAMS.topP, EXTRACTION_PARAMS.topK)
             ).then(result => ({ type: 'characters', data: result }))
           );
         }
@@ -590,7 +600,7 @@ const useBookGenerator = () => {
         if (needsWorldName) {
           extractionPromises.push(
             extractWorldNameFromString(outlineText, (prompt, system) => 
-              generateGeminiText(prompt, system, undefined, EXTRACTION_PARAMS.temperature, EXTRACTION_PARAMS.topP, EXTRACTION_PARAMS.topK)
+              generateText('world_extraction', prompt, system, undefined, EXTRACTION_PARAMS.temperature, EXTRACTION_PARAMS.topP, EXTRACTION_PARAMS.topK)
             ).then(result => ({ type: 'worldName', data: result }))
           );
         }
@@ -598,7 +608,7 @@ const useBookGenerator = () => {
         if (needsMotifs) {
           extractionPromises.push(
             extractMotifsFromString(outlineText, (prompt, system) => 
-              generateGeminiText(prompt, system, undefined, EXTRACTION_PARAMS.temperature, EXTRACTION_PARAMS.topP, EXTRACTION_PARAMS.topK)
+              generateText('motif_extraction', prompt, system, undefined, EXTRACTION_PARAMS.temperature, EXTRACTION_PARAMS.topP, EXTRACTION_PARAMS.topK)
             ).then(result => ({ type: 'motifs', data: result }))
           );
         }
@@ -644,7 +654,7 @@ const useBookGenerator = () => {
               // Use optimized schema by default - faster and more reliable
               console.log(`📝 Generating chapter plan with optimized schema (attempt ${attempt}/${maxPlanRetries})...`);
               const chapterPlanSchema: object = createOptimizedChapterPlanSchema(numChapters);
-              jsonString = await generateGeminiText(chapterPlanPrompt, systemPromptPlan, chapterPlanSchema, OUTLINE_PARAMS.temperature, OUTLINE_PARAMS.topP, OUTLINE_PARAMS.topK);
+              jsonString = await generateText('chapter_planning', chapterPlanPrompt, systemPromptPlan, chapterPlanSchema, OUTLINE_PARAMS.temperature, OUTLINE_PARAMS.topP, OUTLINE_PARAMS.topK);
               console.log('✅ Received chapter plan response with optimized schema');
               
               // Try to parse and validate
@@ -674,7 +684,7 @@ const useBookGenerator = () => {
                 console.log('📝 Final attempt with full expanded schema...');
                 try {
                   const expandedSchema: object = createExpandedChapterPlanSchema(numChapters);
-                  jsonString = await generateGeminiText(chapterPlanPrompt, systemPromptPlan, expandedSchema, OUTLINE_PARAMS.temperature, OUTLINE_PARAMS.topP, OUTLINE_PARAMS.topK);
+                  jsonString = await generateText('chapter_planning', chapterPlanPrompt, systemPromptPlan, expandedSchema, OUTLINE_PARAMS.temperature, OUTLINE_PARAMS.topP, OUTLINE_PARAMS.topK);
                   schemaUsed = 'expanded';
                   console.log('✅ Received chapter plan response with expanded schema');
                   
@@ -933,7 +943,8 @@ ${formatArrayField(thisChapterPlanObject.callbacks, 'Callbacks')}
         });
 
         const analysisSchema = { 
-          type: SchemaType.OBJECT, 
+          type: SchemaType.OBJECT,
+          additionalProperties: false,
           properties: { 
             summary: { type: SchemaType.STRING, description: "A concise summary of the chapter's events" }, 
             timeElapsed: { type: SchemaType.STRING, description: "How much time passed during this chapter" }, 
@@ -956,7 +967,7 @@ ${formatArrayField(thisChapterPlanObject.callbacks, 'Callbacks')}
           chapter_title: plannedTitle,
           chapter_content: chapterContent
         });
-        const analysisJsonString = await generateGeminiText(analysisPrompt, systemPromptAnalyzer, analysisSchema, ANALYSIS_PARAMS.temperature, ANALYSIS_PARAMS.topP, ANALYSIS_PARAMS.topK);
+        const analysisJsonString = await generateText('chapter_analysis', analysisPrompt, systemPromptAnalyzer, analysisSchema, ANALYSIS_PARAMS.temperature, ANALYSIS_PARAMS.topP, ANALYSIS_PARAMS.topK);
         
         let analysisResult;
         try {
@@ -981,7 +992,7 @@ ${formatArrayField(thisChapterPlanObject.callbacks, 'Callbacks')}
               chapter_title: plannedTitle,
               chapter_content_preview: chapterContent.substring(0, 6000) + (chapterContent.length > 6000 ? '...(content continues)' : '')
             });
-            critiqueNotes = await generateGeminiText(selfCritiquePrompt, systemPromptCritic, undefined, 0.4, 0.7, 20);
+            critiqueNotes = await generateText('self_critique', selfCritiquePrompt, systemPromptCritic, undefined, 0.4, 0.7, 20);
 
             // Light polish using existing editing agent in light mode
             const agentResult = await agentEditChapter(
@@ -995,7 +1006,7 @@ ${formatArrayField(thisChapterPlanObject.callbacks, 'Callbacks')}
                         setAgentLogs(prev => [...prev, entry]);
                     }
                 },
-                generateGeminiText
+                (prompt, system, schema, temp, topP, topK) => generateText('editing', prompt, system, schema, temp, topP, topK)
             );
 
             refinedChapterContent = agentResult.refinedContent;
@@ -1035,7 +1046,7 @@ ${formatArrayField(thisChapterPlanObject.callbacks, 'Callbacks')}
                 charactersRef.current,
                 previousChaptersSummaryText,
                 worldName,
-                generateGeminiText
+                (prompt, system, schema, temp, topP, topK) => generateText('chapter_analysis', prompt, system, schema, temp, topP, topK)
             );
             
             // ✅ SAVE: After consistency check
@@ -1058,7 +1069,7 @@ ${formatArrayField(thisChapterPlanObject.callbacks, 'Callbacks')}
         // Note: Conflict verification removed - agent editing already handles this comprehensively
 
         // Update character states for consistency
-        const characterUpdateSchema = { type: SchemaType.OBJECT, properties: { character_updates: { type: SchemaType.ARRAY, description: "An array of objects, each representing an update to a single character's state.", items: { type: SchemaType.OBJECT, properties: { name: { type: SchemaType.STRING, description: "The full name of the character being updated, must match a name from the provided list." }, status: { type: SchemaType.STRING, description: "The character's new status (e.g., 'alive', 'injured', 'captured')." }, location: { type: SchemaType.STRING, description: "The character's new location at the end of the chapter." }, emotional_state: { type: SchemaType.STRING, description: "The character's dominant emotional state at the end of the chapter." }, }, required: ["name"] } } }, required: ["character_updates"] };
+        const characterUpdateSchema = { type: SchemaType.OBJECT, additionalProperties: false, properties: { character_updates: { type: SchemaType.ARRAY, description: "An array of objects, each representing an update to a single character's state.", items: { type: SchemaType.OBJECT, additionalProperties: false, properties: { name: { type: SchemaType.STRING, description: "The full name of the character being updated, must match a name from the provided list." }, status: { type: SchemaType.STRING, description: "The character's new status (e.g., 'alive', 'injured', 'captured')." }, location: { type: SchemaType.STRING, description: "The character's new location at the end of the chapter." }, emotional_state: { type: SchemaType.STRING, description: "The character's dominant emotional state at the end of the chapter." }, }, required: ["name", "status", "location", "emotional_state"] } } }, required: ["character_updates"] };
         const { systemPrompt: systemPromptUpdater, userPrompt: characterUpdatePrompt } = getFormattedPrompt(PromptNames.CHARACTER_UPDATES, {
           character_list: Object.keys(charactersRef.current).join(', '),
           previous_character_states: JSON.stringify(charactersRef.current, null, 2),
@@ -1068,7 +1079,7 @@ ${formatArrayField(thisChapterPlanObject.callbacks, 'Callbacks')}
         });
 
         try {
-            const characterUpdateJsonString = await generateGeminiText(characterUpdatePrompt, systemPromptUpdater, characterUpdateSchema, ANALYSIS_PARAMS.temperature, ANALYSIS_PARAMS.topP, ANALYSIS_PARAMS.topK);
+            const characterUpdateJsonString = await generateText('character_extraction', characterUpdatePrompt, systemPromptUpdater, characterUpdateSchema, ANALYSIS_PARAMS.temperature, ANALYSIS_PARAMS.topP, ANALYSIS_PARAMS.topK);
             const characterUpdateData = JSON.parse(characterUpdateJsonString);
             if (characterUpdateData && characterUpdateData.character_updates) {
                 for (const update of characterUpdateData.character_updates) {
@@ -1195,7 +1206,7 @@ ${formatArrayField(thisChapterPlanObject.callbacks, 'Callbacks')}
           end_of_chapter_a: endOfChapterA,
           start_of_chapter_b: startOfChapterB
         });
-        const refinedEnding = await generateGeminiText(transitionPrompt, systemPromptEditor, undefined, EDITING_PARAMS.temperature, EDITING_PARAMS.topP, EDITING_PARAMS.topK);
+        const refinedEnding = await generateText('synthesis', transitionPrompt, systemPromptEditor, undefined, EDITING_PARAMS.temperature, EDITING_PARAMS.topP, EDITING_PARAMS.topK);
         if (refinedEnding) {
             chaptersForCompilation[i].content = chapterA_content.slice(0, -1500) + (refinedEnding || '').trim();
         }
@@ -1209,7 +1220,7 @@ ${formatArrayField(thisChapterPlanObject.callbacks, 'Callbacks')}
         const { systemPrompt: titleSystemPrompt, userPrompt: titlePrompt } = getFormattedPrompt(PromptNames.TITLE_GENERATION, {
           story_premise: storyPremise
         });
-        let bookTitle = await generateGeminiText(titlePrompt, titleSystemPrompt, undefined, TITLE_PARAMS.temperature, TITLE_PARAMS.topP, TITLE_PARAMS.topK);
+        let bookTitle = await generateText('title_generation', titlePrompt, titleSystemPrompt, undefined, TITLE_PARAMS.temperature, TITLE_PARAMS.topP, TITLE_PARAMS.topK);
         bookTitle = (bookTitle || '').trim().replace(/^"|"$/g, '').replace(/#|Title:/g, '').trim() || `A Novel: ${storyPremise.substring(0, 30)}...`;
 
         let fullBookText = `# ${bookTitle}\n\n`;
